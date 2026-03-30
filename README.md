@@ -1,42 +1,64 @@
 # Fuzzy Forest
 
+Modern Active Directory administration without MMC sprawl.
+
+Users | Computers | Groups | Reports | OU Scoping
+
+[![Latest Release](https://img.shields.io/github/v/release/giftedloser/FuzzyForest?display_name=tag&sort=semver)](https://github.com/giftedloser/FuzzyForest/releases)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Built with Tauri](https://img.shields.io/badge/Built%20with-Tauri%202-24C8DB?logo=tauri&logoColor=white)](https://tauri.app)
+[![Windows](https://img.shields.io/badge/Windows-only-0078D4?logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 [![CI](https://github.com/giftedloser/FuzzyForest/actions/workflows/ci.yml/badge.svg)](https://github.com/giftedloser/FuzzyForest/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Fuzzy Forest is a Windows-native Active Directory management desktop app built with Tauri, React, TypeScript, and Rust. It is designed for administrators who want a fast, modern interface for common directory work without living in legacy MMC tools all day.
+---
 
-## Highlights
+## What is Fuzzy Forest?
 
-- Integrated Windows-authenticated read access for routine directory lookup
-- On-demand elevation for write operations such as password resets and account changes
-- Dashboard with operational metrics, clickable drill-downs, and report shortcuts
-- Users, Computers, Groups, Directory, Reports, and Settings workflows
-- Persistent day-scoped read caching with targeted refresh
-- OU scoping, command palette search, and keyboard-friendly navigation
-- Launch-at-startup support for desktop deployment scenarios
+Fuzzy Forest is a Windows-native desktop app for everyday Active Directory administration. It gives you one fast interface for browsing users, computers, groups, reports, and directory structure without bouncing between legacy consoles all day.
 
-## What It Does
+Built with Tauri 2, React 19, TypeScript, and Rust. Windows only. Powered by integrated Windows authentication for reads and explicit elevation for writes.
 
-Fuzzy Forest focuses on everyday Active Directory administration:
+## Features
 
-- Browse and search users, computers, and groups
-- Open detailed object views
-- Unlock users, reset passwords, and enable or disable accounts
-- Create users and groups
-- Manage group membership
-- Run focused reports such as locked accounts, inactive users, empty groups, and large groups
-- Limit the visible directory scope to selected organizational units
+### Work the Directory Fast
+
+- Browse users, computers, and groups with search, filters, sorting, and paging
+- Open detailed object views without leaving the main workflow
+- Use OU scoping to limit what the app surfaces
+- Jump anywhere quickly with the command palette
+
+### Admin Safely
+
+- Read operations use the current Windows session
+- Write operations require explicit elevation
+- Passwords are never persisted
+- Backend PowerShell input is sanitized before execution
+- Report types are backend-allowlisted
+
+### Stay Operational
+
+- Dashboard cards drill into the exact users, reports, groups, or computers behind the metric
+- Reports cover locked accounts, inactive users, expiring passwords, never-logged-in users, empty groups, large groups, and more
+- Launch-at-startup support is built into Settings
+- Manual refresh is scoped so you can pull live directory state without reloading everything
+
+### Feel Native
+
+- Desktop app, not a browser wrapper pretending to be an admin console
+- Lazy-loaded routes and chart views for better perceived performance
+- Day-scoped persistent read caching for fast repeat use
+- Keyboard-friendly navigation patterns throughout the UI
 
 ## Requirements
 
 | Requirement | Notes |
 | --- | --- |
-| Operating system | Windows 10 or Windows 11 |
-| Directory environment | Domain-joined machine with access to Active Directory |
+| OS | Windows 10 or Windows 11 |
+| Directory environment | Domain-joined machine with Active Directory access |
 | PowerShell | Windows PowerShell 5.1 or later |
 | RSAT | Active Directory module must be installed |
 | Runtime | WebView2 |
-| Tooling for development | Node.js 20+, npm 10+, Rust stable |
+| Dev tooling | Node.js 20+, npm 10+, Rust stable |
 
 Install RSAT if needed:
 
@@ -60,29 +82,18 @@ npm run tauri:dev
 npm run tauri:build
 ```
 
-Installer bundles are generated under `src-tauri/target/release/bundle/`.
+Build artifacts are generated under `src-tauri/target/release/bundle/`.
 
-## Security Model
+## Tech Stack
 
-Fuzzy Forest is intentionally split between low-friction reads and explicit writes:
-
-- Read operations use the current Windows session and do not prompt for credentials.
-- Write operations require an elevation prompt for a privileged account.
-- Passwords are used per operation and are not persisted.
-- PowerShell input is sanitized before command construction.
-- Report types are allowlisted on the backend.
-
-For the full model, see [docs/security-model.md](docs/security-model.md) and [SECURITY.md](SECURITY.md).
-
-## Performance Notes
-
-The app is optimized for real-world directory usage:
-
-- React routes and dashboard charts are lazy-loaded
-- Read queries are cached and persisted for the day
-- The top refresh action is scoped instead of globally refetching everything
-- Read-only PowerShell commands reuse a long-lived session with fallback to isolated one-shot execution
-- Large object grids use server paging instead of silently truncating at 500 rows
+- Tauri 2
+- React 19
+- TypeScript
+- Rust
+- TanStack Query
+- TanStack Table
+- Zustand
+- Radix UI
 
 ## Project Structure
 
@@ -96,6 +107,18 @@ The app is optimized for real-world directory usage:
 └── README.md
 ```
 
+## Security Model
+
+Fuzzy Forest is intentionally split between low-friction reads and explicit writes:
+
+- Read operations use the current Windows session
+- Write operations require an elevation prompt
+- Passwords are used per operation and are not stored
+- Input is sanitized before PowerShell command construction
+- The shared read worker falls back to isolated execution on failure
+
+Read more in [docs/security-model.md](docs/security-model.md) and [SECURITY.md](SECURITY.md).
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
@@ -104,14 +127,10 @@ The app is optimized for real-world directory usage:
 - [Release Process](docs/releasing.md)
 - [Contributing](CONTRIBUTING.md)
 
-## Status
-
-Fuzzy Forest is usable today and structured for continued development. It is currently Windows-first and intentionally optimized for Active Directory administration rather than generic LDAP directory management.
-
 ## Contributing
 
-Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and keep the security boundaries intact when changing the read/write path.
+Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and keep the security boundaries intact when changing the read and write paths.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+Fuzzy Forest is released under the [MIT License](LICENSE).
