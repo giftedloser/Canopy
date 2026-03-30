@@ -12,8 +12,14 @@ Users &nbsp;|&nbsp; Computers &nbsp;|&nbsp; Groups &nbsp;|&nbsp; OU Scoping
 [![Built with Tauri](https://img.shields.io/badge/Built%20with-Tauri%202-24C8DB?logo=tauri&logoColor=white)](https://tauri.app)
 [![Windows](https://img.shields.io/badge/Windows-only-0078D4?logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 [![CI](https://github.com/giftedloser/FuzzyForest/actions/workflows/ci.yml/badge.svg)](https://github.com/giftedloser/FuzzyForest/actions/workflows/ci.yml)
-</div>
+
+<br />
+
+<img src="https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white" alt="Windows" />
+
 ---
+</div>
+
 
 ## What is Fuzzy Forest?
 
