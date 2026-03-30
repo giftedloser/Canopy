@@ -1,0 +1,369 @@
+@import "tailwindcss";
+
+/* ─── Fonts ────────────────────────────────────────────────── */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/plus-jakarta-sans@5/files/plus-jakarta-sans-latin-400-normal.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/plus-jakarta-sans@5/files/plus-jakarta-sans-latin-500-normal.woff2') format('woff2');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/plus-jakarta-sans@5/files/plus-jakarta-sans-latin-600-normal.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/plus-jakarta-sans@5/files/plus-jakarta-sans-latin-700-normal.woff2') format('woff2');
+  font-weight: 700; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/files/jetbrains-mono-latin-400-normal.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/files/jetbrains-mono-latin-500-normal.woff2') format('woff2');
+  font-weight: 500; font-style: normal; font-display: swap;
+}
+
+/* ─── Design Tokens (Light) ────────────────────────────────── */
+@theme {
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+
+  /* Light mode – clean warm whites */
+  --color-background:         hsl(36 20% 97%);
+  --color-foreground:         hsl(222 25% 12%);
+  --color-card:               hsl(0 0% 100%);
+  --color-card-foreground:    hsl(222 25% 12%);
+  --color-popover:            hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222 25% 12%);
+
+  --color-primary:            hsl(36 90% 50%);
+  --color-primary-foreground: hsl(36 10% 10%);
+
+  --color-secondary:          hsl(36 15% 93%);
+  --color-secondary-foreground: hsl(222 20% 20%);
+  --color-muted:              hsl(36 12% 91%);
+  --color-muted-foreground:   hsl(220 8% 46%);
+  --color-accent:             hsl(36 80% 94%);
+  --color-accent-foreground:  hsl(36 90% 35%);
+
+  --color-destructive:        hsl(0 72% 51%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border:             hsl(36 12% 86%);
+  --color-input:              hsl(36 12% 86%);
+  --color-ring:               hsl(36 90% 50%);
+
+  --color-success:            hsl(152 65% 38%);
+  --color-success-foreground: hsl(0 0% 100%);
+  --color-warning:            hsl(36 90% 50%);
+  --color-warning-foreground: hsl(36 10% 10%);
+
+  --color-sidebar:            hsl(222 25% 12%);
+  --color-sidebar-foreground: hsl(210 20% 88%);
+  --color-sidebar-border:     hsl(222 20% 18%);
+  --color-sidebar-active:     hsl(36 90% 54%);
+  --color-sidebar-muted:      hsl(218 10% 55%);
+
+  --radius-sm: 0.3rem;
+  --radius-md: 0.45rem;
+  --radius-lg: 0.6rem;
+  --radius-xl: 0.875rem;
+
+  --animate-fade-in:        fade-in 0.3s ease-out;
+  --animate-slide-in-right: slide-in-right 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-scale-in:       scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-pulse-subtle:   pulse-subtle 2.4s ease-in-out infinite;
+  --animate-shimmer:        shimmer 1.8s linear infinite;
+}
+
+/* ─── Dark Mode ─────────────────────────────────────────────── */
+.dark {
+  --color-background:         hsl(222 28% 5%);
+  --color-foreground:         hsl(210 20% 92%);
+  --color-card:               hsl(222 24% 8%);
+  --color-card-foreground:    hsl(210 20% 92%);
+  --color-popover:            hsl(222 24% 8%);
+  --color-popover-foreground: hsl(210 20% 92%);
+
+  --color-primary:            hsl(38 92% 54%);
+  --color-primary-foreground: hsl(222 28% 5%);
+
+  --color-secondary:          hsl(222 18% 13%);
+  --color-secondary-foreground: hsl(210 18% 85%);
+  --color-muted:              hsl(222 18% 13%);
+  --color-muted-foreground:   hsl(218 8% 52%);
+  --color-accent:             hsl(38 50% 14%);
+  --color-accent-foreground:  hsl(38 92% 62%);
+
+  --color-destructive:        hsl(0 65% 55%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border:             hsl(222 15% 14%);
+  --color-input:              hsl(222 15% 14%);
+  --color-ring:               hsl(38 92% 54%);
+
+  --color-success:            hsl(152 65% 42%);
+  --color-success-foreground: hsl(0 0% 100%);
+  --color-warning:            hsl(38 92% 54%);
+  --color-warning-foreground: hsl(222 28% 5%);
+
+  --color-sidebar:            hsl(222 32% 4%);
+  --color-sidebar-foreground: hsl(210 16% 82%);
+  --color-sidebar-border:     hsl(222 18% 11%);
+  --color-sidebar-active:     hsl(38 92% 54%);
+  --color-sidebar-muted:      hsl(218 8% 46%);
+}
+
+/* ─── Midnight (true black OLED) ──────────────────────────────── */
+.midnight {
+  --color-background:         hsl(230 15% 2%);
+  --color-foreground:         hsl(220 15% 90%);
+  --color-card:               hsl(230 12% 6%);
+  --color-card-foreground:    hsl(220 15% 90%);
+  --color-popover:            hsl(230 12% 6%);
+  --color-popover-foreground: hsl(220 15% 90%);
+
+  --color-primary:            hsl(215 85% 60%);
+  --color-primary-foreground: hsl(230 15% 2%);
+
+  --color-secondary:          hsl(230 10% 10%);
+  --color-secondary-foreground: hsl(220 12% 82%);
+  --color-muted:              hsl(230 10% 10%);
+  --color-muted-foreground:   hsl(220 8% 48%);
+  --color-accent:             hsl(215 40% 14%);
+  --color-accent-foreground:  hsl(215 85% 68%);
+
+  --color-destructive:        hsl(0 65% 55%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border:             hsl(230 10% 12%);
+  --color-input:              hsl(230 10% 12%);
+  --color-ring:               hsl(215 85% 60%);
+
+  --color-success:            hsl(152 65% 42%);
+  --color-success-foreground: hsl(0 0% 100%);
+  --color-warning:            hsl(38 92% 54%);
+  --color-warning-foreground: hsl(230 15% 2%);
+
+  --color-sidebar:            hsl(0 0% 0%);
+  --color-sidebar-foreground: hsl(220 12% 78%);
+  --color-sidebar-border:     hsl(230 8% 10%);
+  --color-sidebar-active:     hsl(215 85% 60%);
+  --color-sidebar-muted:      hsl(220 6% 42%);
+}
+
+/* ─── Forest (green-tinted dark) ──────────────────────────────── */
+.forest {
+  --color-background:         hsl(150 18% 5%);
+  --color-foreground:         hsl(140 12% 90%);
+  --color-card:               hsl(150 15% 8%);
+  --color-card-foreground:    hsl(140 12% 90%);
+  --color-popover:            hsl(150 15% 8%);
+  --color-popover-foreground: hsl(140 12% 90%);
+
+  --color-primary:            hsl(152 60% 45%);
+  --color-primary-foreground: hsl(150 18% 4%);
+
+  --color-secondary:          hsl(150 12% 12%);
+  --color-secondary-foreground: hsl(140 10% 82%);
+  --color-muted:              hsl(150 12% 12%);
+  --color-muted-foreground:   hsl(145 6% 48%);
+  --color-accent:             hsl(152 30% 14%);
+  --color-accent-foreground:  hsl(152 60% 55%);
+
+  --color-destructive:        hsl(0 65% 55%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+  --color-border:             hsl(150 10% 13%);
+  --color-input:              hsl(150 10% 13%);
+  --color-ring:               hsl(152 60% 45%);
+
+  --color-success:            hsl(152 65% 42%);
+  --color-success-foreground: hsl(0 0% 100%);
+  --color-warning:            hsl(38 92% 54%);
+  --color-warning-foreground: hsl(150 18% 4%);
+
+  --color-sidebar:            hsl(150 20% 3%);
+  --color-sidebar-foreground: hsl(140 10% 78%);
+  --color-sidebar-border:     hsl(150 12% 10%);
+  --color-sidebar-active:     hsl(152 60% 45%);
+  --color-sidebar-muted:      hsl(145 6% 42%);
+}
+
+/* ─── Keyframes ─────────────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes ping-once {
+  0%  { transform: scale(1);   opacity: 0.8; }
+  75% { transform: scale(2.2); opacity: 0; }
+  100%{ transform: scale(2.2); opacity: 0; }
+}
+
+/* ─── Base ──────────────────────────────────────────────────── */
+* { border-color: var(--color-border); }
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar         { width: 4px; height: 4px; }
+::-webkit-scrollbar-track   { background: transparent; }
+::-webkit-scrollbar-thumb   { background: var(--color-border); border-radius: 100px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-muted-foreground); }
+
+/* ─── Tauri ──────────────────────────────────────────────────── */
+[data-tauri-drag-region] { -webkit-user-select: none; user-select: none; }
+
+/* ─── Dot grid (sidebar texture) ────────────────────────────── */
+.dot-grid {
+  background-image: radial-gradient(circle, hsl(218 15% 28% / 0.5) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+/* ─── Stagger animations ─────────────────────────────────────── */
+.card-stagger > * { animation: fade-in 0.4s ease-out both; }
+.card-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.card-stagger > *:nth-child(2) { animation-delay: 60ms; }
+.card-stagger > *:nth-child(3) { animation-delay: 120ms; }
+.card-stagger > *:nth-child(4) { animation-delay: 180ms; }
+.card-stagger > *:nth-child(5) { animation-delay: 240ms; }
+.card-stagger > *:nth-child(6) { animation-delay: 300ms; }
+
+/* ─── Table row ──────────────────────────────────────────────── */
+.table-row-animate { animation: fade-in 0.22s ease-out both; }
+
+.data-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  vertical-align: middle;
+}
+
+.data-table-slim tbody tr {
+  height: 52px;
+}
+
+.data-table-slim td {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.table-row-hover {
+  transition: background-color 0.1s;
+}
+.table-row-hover td:first-child {
+  box-shadow: inset 2px 0 0 transparent;
+  transition: box-shadow 0.15s;
+}
+.table-row-hover:hover td:first-child {
+  box-shadow: inset 2px 0 0 var(--color-primary);
+}
+
+/* ─── Stat card number ────────────────────────────────────────── */
+.stat-number { animation: count-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ─── Sheet overlay ──────────────────────────────────────────── */
+.sheet-overlay { animation: fade-in 0.15s ease-out; }
+
+/* ─── Skeleton shimmer ───────────────────────────────────────── */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-secondary) 0%,
+    var(--color-muted) 40%,
+    var(--color-secondary) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+  border-radius: 6px;
+}
+
+/* ─── Amber glow (for locked/alert cards) ────────────────────── */
+.alert-glow {
+  box-shadow: 0 0 0 1px hsl(0 65% 55% / 0.25),
+              0 4px 24px hsl(0 65% 55% / 0.08);
+}
+
+/* ─── Input base ─────────────────────────────────────────────── */
+.input-base {
+  height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-secondary);
+  font-size: 12px;
+  color: var(--color-foreground);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+.input-base::placeholder { color: var(--color-muted-foreground); opacity: 0.5; }
+.input-base:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px hsl(38 92% 54% / 0.15);
+}
+
+/* ─── Badge variants ─────────────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 100px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1.8;
+}
+
+/* ─── Kbd ────────────────────────────────────────────────────── */
+kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background: var(--color-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-muted-foreground);
+  line-height: 1.6;
+}
