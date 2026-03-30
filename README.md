@@ -138,8 +138,8 @@ Read more in [docs/security-model.md](docs/security-model.md) and [SECURITY.md](
 
 ## Contributing
 
-Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and keep the security boundaries intact when changing the read and write paths.
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions and guidelines.
 
 ## License
 
-Fuzzy Forest is released under the [MIT License](LICENSE).
+[MIT](LICENSE) &copy; LoserLabs
