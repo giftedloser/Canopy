@@ -1,8 +1,11 @@
+<div align="center">
+<img width="310" height="310" alt="Square310x310Logo" src="https://github.com/user-attachments/assets/53865f7c-a7d4-4f69-a950-cd6f0d217755" />
+
 # Fuzzy Forest
 
 Modern Active Directory administration without MMC sprawl.
 
-Users | Computers | Groups | Reports | OU Scoping
+Users &nbsp;|&nbsp; Computers &nbsp;|&nbsp; Groups &nbsp;|&nbsp; OU Scoping
 
 [![Latest Release](https://img.shields.io/github/v/release/giftedloser/FuzzyForest?display_name=tag&sort=semver)](https://github.com/giftedloser/FuzzyForest/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
