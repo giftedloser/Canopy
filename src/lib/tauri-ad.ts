@@ -303,6 +303,7 @@ export async function getGroupsPage(params: {
   pageSize?: number;
   sortBy?: string;
   sortDir?: "asc" | "desc";
+  includeMemberCounts?: boolean;
 }) {
   return invokeRead<string>("get_groups", {
     search: params.search,
@@ -315,6 +316,8 @@ export async function getGroupsPage(params: {
     sortBy: params.sortBy,
     sort_dir: params.sortDir,
     sortDir: params.sortDir,
+    include_member_counts: params.includeMemberCounts,
+    includeMemberCounts: params.includeMemberCounts,
   });
 }
 

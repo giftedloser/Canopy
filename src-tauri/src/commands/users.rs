@@ -161,9 +161,15 @@ pub async fn get_user_detail(
 
     let script = format!(
         r#"$user = Get-ADUser -Identity '{sam}' -Server '{server}' -Properties *
-$groups = Get-ADPrincipalGroupMembership -Identity '{sam}' -Server '{server}' | Select-Object Name, SamAccountName, GroupCategory, GroupScope
+$groups = @()
+try {{
+    $groups = @(Get-ADPrincipalGroupMembership -Identity $user.DistinguishedName -Server '{server}' |
+        Select-Object Name, SamAccountName, GroupCategory, GroupScope)
+}} catch {{
+    $groups = @()
+}}
 @{{
-    user = $user | Select-Object Name,SamAccountName,DisplayName,EmailAddress,Department,Title,Company,Office,Manager,StreetAddress,City,State,PostalCode,Country,TelephoneNumber,MobilePhone,Enabled,LockedOut,LastLogonDate,PasswordLastSet,PasswordNeverExpires,AccountExpirationDate,WhenCreated,WhenChanged,DistinguishedName,Description,HomeDirectory,HomeDrive,ScriptPath,ProfilePath
+    user = $user | Select-Object Name,SamAccountName,DisplayName,GivenName,Surname,EmailAddress,Department,Title,Company,Office,Manager,StreetAddress,City,State,PostalCode,Country,TelephoneNumber,MobilePhone,Enabled,LockedOut,LastLogonDate,PasswordLastSet,PasswordNeverExpires,AccountExpirationDate,WhenCreated,WhenChanged,DistinguishedName,Description,HomeDirectory,HomeDrive,ScriptPath,ProfilePath
     groups = $groups
 }} | ConvertTo-Json -Depth 4"#,
         sam = safe_sam,

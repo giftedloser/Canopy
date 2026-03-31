@@ -278,7 +278,7 @@ export default function ComputersPage() {
 
 /* ─── Computer detail sheet ──────────────────────────────────── */
 function ComputerDetailSheet({ name, onClose }: { name: string; onClose: () => void }) {
-  const { data, isLoading } = useComputerDetail(name);
+  const { data, isLoading, error } = useComputerDetail(name);
   const toggle = useToggleComputer();
   const [tab, setTab] = useState<"details" | "groups">("details");
   const comp   = data?.computer;
@@ -369,6 +369,15 @@ function ComputerDetailSheet({ name, onClose }: { name: string; onClose: () => v
           {isLoading ? (
             <div className="flex items-center justify-center h-40">
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : error ? (
+            <div className="p-5">
+              <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3">
+                <p className="text-sm font-semibold text-destructive">Failed to load computer details</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {error instanceof Error ? error.message : "Unknown error"}
+                </p>
+              </div>
             </div>
           ) : tab === "details" ? (
             <div className="p-5 space-y-5">

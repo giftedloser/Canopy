@@ -26,12 +26,22 @@ type SearchResult = {
   sam?: string;
 };
 
+type CachedSearchResult = {
+  fetchedAt: number;
+  results: SearchResult[];
+};
+
+const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
+const SEARCH_CACHE_MAX_ENTRIES = 25;
+
 const pages: SearchResult[] = [
   { type: "page", name: "Dashboard",  detail: "Overview & stats" },
   { type: "page", name: "Users",      detail: "Manage AD users" },
   { type: "page", name: "Computers",  detail: "Manage AD computers" },
   { type: "page", name: "Groups",     detail: "Manage AD groups" },
+  { type: "page", name: "Directory",  detail: "Browse OU structure" },
   { type: "page", name: "Reports",    detail: "Generate reports" },
+  { type: "page", name: "Settings",   detail: "Configure app behavior" },
 ];
 
 const pageRoutes: Record<string, string> = {
@@ -39,7 +49,9 @@ const pageRoutes: Record<string, string> = {
   Users:     "/users",
   Computers: "/computers",
   Groups:    "/groups",
+  Directory: "/directory",
   Reports:   "/reports",
+  Settings:  "/settings",
 };
 
 const typeIcons = {
@@ -47,7 +59,7 @@ const typeIcons = {
   computer: Monitor,
   group:    ShieldCheck,
   page:     LayoutDashboard,
-};
+} as const;
 
 const typeBadge: Record<string, string> = {
   user:     "bg-blue-500/10 text-blue-400",
@@ -59,11 +71,15 @@ const typeBadge: Record<string, string> = {
 export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
   const navigate    = useNavigate();
   const isConnected = useCredentialStore((s) => s.isConnected);
+  const connectionScope = useCredentialStore(
+    (s) => `${s.connectionInfo?.domainName ?? ""}|${s.connectionInfo?.activeServer ?? ""}`
+  );
   const [query,    setQuery]    = useState("");
   const [results,  setResults]  = useState<SearchResult[]>(pages);
   const [selected, setSelected] = useState(0);
   const [loading,  setLoading]  = useState(false);
   const requestSequence = useRef(0);
+  const searchCache = useRef(new Map<string, CachedSearchResult>());
 
   useEffect(() => {
     if (!open) {
@@ -76,6 +92,10 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
   }, [open]);
 
   useEffect(() => {
+    searchCache.current.clear();
+  }, [connectionScope]);
+
+  useEffect(() => {
     if (!query.trim()) { setResults(pages); setSelected(0); return; }
 
     const lq = query.toLowerCase();
@@ -83,7 +103,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
       (p) => p.name.toLowerCase().includes(lq) || p.detail.toLowerCase().includes(lq)
     );
 
-    if (query.trim().length < 2) {
+    if (query.trim().length < 3) {
       requestSequence.current += 1;
       setResults(filteredPages);
       setSelected(0);
@@ -101,12 +121,21 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
 
     const requestId = ++requestSequence.current;
     const timer = setTimeout(async () => {
+      const cacheKey = `${connectionScope}::${query.trim().toLowerCase()}`;
+      const cached = searchCache.current.get(cacheKey);
+      if (cached && Date.now() - cached.fetchedAt < SEARCH_CACHE_TTL_MS) {
+        setResults(cached.results);
+        setSelected(0);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
         const [usersRaw, computersRaw, groupsRaw] = await Promise.allSettled([
           getUsersPage({ search: query, page: 1, pageSize: 5 }),
           getComputersPage({ search: query, page: 1, pageSize: 3 }),
-          getGroupsPage({ search: query, page: 1, pageSize: 3 }),
+          getGroupsPage({ search: query, page: 1, pageSize: 3, includeMemberCounts: false }),
         ]);
 
         const adResults: SearchResult[] = [];
@@ -137,7 +166,19 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
         }
 
         if (requestSequence.current === requestId) {
-          setResults([...filteredPages, ...adResults]);
+          const combinedResults = [...filteredPages, ...adResults];
+          searchCache.current.set(cacheKey, {
+            fetchedAt: Date.now(),
+            results: combinedResults,
+          });
+          if (searchCache.current.size > SEARCH_CACHE_MAX_ENTRIES) {
+            const oldestKey = searchCache.current.keys().next().value;
+            if (oldestKey) {
+              searchCache.current.delete(oldestKey);
+            }
+          }
+
+          setResults(combinedResults);
           setSelected(0);
         }
       } catch {

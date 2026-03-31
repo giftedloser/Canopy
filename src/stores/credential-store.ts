@@ -71,6 +71,7 @@ export const useCredentialStore = create<CredentialState>((set) => ({
         activeServer: resolvedServer,
       };
 
+      queryClient.clear();
       storeLastActiveServer(connectionInfo.activeServer);
       hydrateConnectionScopedQueries(queryClient, connectionInfo);
 
@@ -84,12 +85,18 @@ export const useCredentialStore = create<CredentialState>((set) => ({
     set((state) => {
       if (!state.connectionInfo) return state;
       const nextOverride = serverOverride.trim();
+      const nextActiveServer = nextOverride || state.connectionInfo.resolvedServer;
+      const serverChanged =
+        nextActiveServer.toLowerCase() !== state.connectionInfo.activeServer.toLowerCase();
       const connectionInfo = {
         ...state.connectionInfo,
         serverOverride: nextOverride,
-        activeServer: nextOverride || state.connectionInfo.resolvedServer,
+        activeServer: nextActiveServer,
       };
 
+      if (serverChanged) {
+        queryClient.clear();
+      }
       storeLastActiveServer(connectionInfo.activeServer);
       hydrateConnectionScopedQueries(queryClient, connectionInfo);
 

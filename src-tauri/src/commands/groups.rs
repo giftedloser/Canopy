@@ -9,6 +9,7 @@ pub async fn get_groups(
     page_size: Option<u32>,
     sort_by: Option<String>,
     sort_dir: Option<String>,
+    include_member_counts: Option<bool>,
 ) -> Result<String, String> {
     let server = server.trim().to_string();
     if server.is_empty() {
@@ -30,6 +31,7 @@ pub async fn get_groups(
     };
     let sort_desc = matches!(sort_dir.as_deref(), Some("desc") | Some("DESC") | Some("Desc"));
     let sort_by_member_count = sort_prop == "MemberCount";
+    let include_member_counts = include_member_counts.unwrap_or(true);
 
     let filter_expr = if let Some(ref term) = search {
         let safe = sanitizer::sanitize_ps_string(term)?;
@@ -47,7 +49,35 @@ pub async fn get_groups(
                 ou_parts.push(format!("'{}'", safe));
             }
             let script = format!(
-                r#"$results = @()
+                r#"function Get-ExactGroupMemberCount([string] $identity) {{
+    try {{
+        $count = 0
+        $start = 0
+        while ($true) {{
+            $rangeAttr = "member;range=$start-$($start + 1499)"
+            $rangeGroup = Get-ADGroup -Identity $identity -Server '{server}' -Properties $rangeAttr
+            $rangeProp = $rangeGroup.PSObject.Properties | Where-Object {{ $_.Name -like 'member;range=*' }} | Select-Object -First 1
+            if (-not $rangeProp) {{
+                return 0
+            }}
+
+            $rangeMembers = @($rangeProp.Value)
+            $count += $rangeMembers.Count
+
+            if ($rangeProp.Name -match '^member;range=\d+-\*$' -or $rangeMembers.Count -eq 0) {{
+                break
+            }}
+
+            $start += $rangeMembers.Count
+        }}
+
+        return $count
+    }} catch {{
+        return 0
+    }}
+}}
+
+$results = @()
 foreach ($base in @({ous})) {{
     if (${sort_by_member_count}) {{
         $results += Get-ADGroup -Filter {filter} -Server '{server}' -SearchBase $base -SearchScope Subtree -Properties Description,WhenCreated,ManagedBy,Members
@@ -67,14 +97,10 @@ if (${sort_by_member_count}) {{
     $total = $sorted.Count
     $pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
 
-    foreach ($group in $pageItems) {{
-        $memberCount = 0
-        try {{
-            $memberCount = @((Get-ADGroup -Identity $group.DistinguishedName -Server '{server}' -Properties Members).Members).Count
-        }} catch {{
-            $memberCount = 0
+    if (${include_member_counts}) {{
+        foreach ($group in $pageItems) {{
+            $group | Add-Member -NotePropertyName MemberCount -NotePropertyValue (Get-ExactGroupMemberCount $group.DistinguishedName) -Force
         }}
-        $group | Add-Member -NotePropertyName MemberCount -NotePropertyValue $memberCount -Force
     }}
 }}
 
@@ -95,6 +121,7 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
                 sort_prop = sort_prop,
                 sort_desc = if sort_desc { "true" } else { "false" },
                 sort_by_member_count = if sort_by_member_count { "true" } else { "false" },
+                include_member_counts = if include_member_counts { "true" } else { "false" },
                 skip = skip,
                 page = page,
                 page_size = page_size,
@@ -104,7 +131,35 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
     }
 
     let script = format!(
-        r#"if (${sort_by_member_count}) {{
+        r#"function Get-ExactGroupMemberCount([string] $identity) {{
+    try {{
+        $count = 0
+        $start = 0
+        while ($true) {{
+            $rangeAttr = "member;range=$start-$($start + 1499)"
+            $rangeGroup = Get-ADGroup -Identity $identity -Server '{server}' -Properties $rangeAttr
+            $rangeProp = $rangeGroup.PSObject.Properties | Where-Object {{ $_.Name -like 'member;range=*' }} | Select-Object -First 1
+            if (-not $rangeProp) {{
+                return 0
+            }}
+
+            $rangeMembers = @($rangeProp.Value)
+            $count += $rangeMembers.Count
+
+            if ($rangeProp.Name -match '^member;range=\d+-\*$' -or $rangeMembers.Count -eq 0) {{
+                break
+            }}
+
+            $start += $rangeMembers.Count
+        }}
+
+        return $count
+    }} catch {{
+        return 0
+    }}
+}}
+
+if (${sort_by_member_count}) {{
     $results = @(Get-ADGroup -Filter {filter} -Server '{server}' -Properties Description,WhenCreated,ManagedBy,Members |
         Select-Object Name,SamAccountName,GroupCategory,GroupScope,Description,WhenCreated,ManagedBy,DistinguishedName,@{{Name='MemberCount';Expression={{ @($_.Members).Count }}}})
     $sorted = @($results | Sort-Object -Property {sort_prop} -Descending:${sort_desc})
@@ -116,14 +171,10 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
     $total = $sorted.Count
     $pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
 
-    foreach ($group in $pageItems) {{
-        $memberCount = 0
-        try {{
-            $memberCount = @((Get-ADGroup -Identity $group.DistinguishedName -Server '{server}' -Properties Members).Members).Count
-        }} catch {{
-            $memberCount = 0
+    if (${include_member_counts}) {{
+        foreach ($group in $pageItems) {{
+            $group | Add-Member -NotePropertyName MemberCount -NotePropertyValue (Get-ExactGroupMemberCount $group.DistinguishedName) -Force
         }}
-        $group | Add-Member -NotePropertyName MemberCount -NotePropertyValue $memberCount -Force
     }}
 }}
 
@@ -143,6 +194,7 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
         sort_prop = sort_prop,
         sort_desc = if sort_desc { "true" } else { "false" },
         sort_by_member_count = if sort_by_member_count { "true" } else { "false" },
+        include_member_counts = if include_member_counts { "true" } else { "false" },
         skip = skip,
         page = page,
         page_size = page_size,

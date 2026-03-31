@@ -123,7 +123,13 @@ pub async fn get_computer_detail(
 
     let script = format!(
         r#"$computer = Get-ADComputer -Identity '{name}' -Server '{server}' -Properties *
-$groups = Get-ADPrincipalGroupMembership -Identity '{name}$' -Server '{server}' | Select-Object Name, SamAccountName, GroupCategory
+$groups = @()
+try {{
+    $groups = @(Get-ADPrincipalGroupMembership -Identity $computer.DistinguishedName -Server '{server}' |
+        Select-Object Name, SamAccountName, GroupCategory, GroupScope)
+}} catch {{
+    $groups = @()
+}}
 @{{
     computer = $computer | Select-Object Name,DNSHostName,OperatingSystem,OperatingSystemVersion,OperatingSystemServicePack,LastLogonDate,Enabled,IPv4Address,DistinguishedName,WhenCreated,WhenChanged,Description,Location,ManagedBy,ServicePrincipalNames
     groups = $groups

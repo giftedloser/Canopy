@@ -86,3 +86,63 @@ pub fn sanitize_sam(sam: &str) -> Result<String, String> {
 
     Ok(sam.to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        sanitize_ad_filter, sanitize_dn, sanitize_ps_string, sanitize_sam,
+    };
+
+    #[test]
+    fn sanitize_ps_string_escapes_single_quotes() {
+        let value = "O'Connor";
+        let sanitized = sanitize_ps_string(value).expect("single quotes should be escaped");
+        assert_eq!(sanitized, "O''Connor");
+    }
+
+    #[test]
+    fn sanitize_ps_string_rejects_powershell_escape_characters() {
+        let err = sanitize_ps_string("corp`nadmin").expect_err("backticks must be blocked");
+        assert!(err.contains("disallowed"));
+    }
+
+    #[test]
+    fn sanitize_ad_filter_allows_simple_filters() {
+        let filter = "Enabled -eq $true".replace('$', "");
+        let sanitized = sanitize_ad_filter(&filter).expect("simple filters should pass");
+        assert_eq!(sanitized, filter);
+    }
+
+    #[test]
+    fn sanitize_ad_filter_rejects_script_injection_tokens() {
+        let err = sanitize_ad_filter("Name -like '*admin*'; Remove-Item")
+            .expect_err("injection tokens must be blocked");
+        assert!(err.contains("disallowed"));
+    }
+
+    #[test]
+    fn sanitize_dn_rejects_empty_values() {
+        let err = sanitize_dn("").expect_err("empty DNs must fail");
+        assert!(err.contains("cannot be empty"));
+    }
+
+    #[test]
+    fn sanitize_dn_escapes_single_quotes() {
+        let dn = "OU=O'Brian,DC=example,DC=com";
+        let sanitized = sanitize_dn(dn).expect("single quotes should be escaped in DNs");
+        assert_eq!(sanitized, "OU=O''Brian,DC=example,DC=com");
+    }
+
+    #[test]
+    fn sanitize_sam_allows_standard_account_names() {
+        let sanitized = sanitize_sam("svc_backup-user.01")
+            .expect("standard SAM account names should pass");
+        assert_eq!(sanitized, "svc_backup-user.01");
+    }
+
+    #[test]
+    fn sanitize_sam_rejects_invalid_characters() {
+        let err = sanitize_sam("bad/user").expect_err("slashes are not valid in SAM names");
+        assert!(err.contains("invalid characters"));
+    }
+}
