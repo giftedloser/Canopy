@@ -10,6 +10,7 @@ pub async fn get_users(
     page_size: Option<u32>,
     sort_by: Option<String>,
     sort_dir: Option<String>,
+    fetch_all: Option<bool>,
 ) -> Result<String, String> {
     let server = server.trim().to_string();
     if server.is_empty() {
@@ -18,6 +19,7 @@ pub async fn get_users(
     let srv = sanitizer::sanitize_ps_string(&server)?;
     let page = page.unwrap_or(1).max(1);
     let page_size = page_size.unwrap_or(100).clamp(25, 200);
+    let fetch_all = fetch_all.unwrap_or(false);
     let skip = (page - 1) * page_size;
 
     let props = "DisplayName,EmailAddress,Department,Title,Enabled,LockedOut,LastLogonDate,WhenCreated,DistinguishedName,SamAccountName,Description,EmployeeNumber";
@@ -65,7 +67,25 @@ pub async fn get_users(
                 ou_parts.push(format!("'{}'", safe));
             }
             let script = format!(
-                r#"$results = @()
+                r#"function Get-UserSortValue([object] $user) {{
+    switch ('{sort_prop}') {{
+        'SamAccountName' {{ return [string]$user.SamAccountName }}
+        'Description' {{ return [string]$user.Description }}
+        'Department' {{ return [string]$user.Department }}
+        'Enabled' {{ return if ($user.Enabled) {{ 1 }} else {{ 0 }} }}
+        'LastLogonDate' {{
+            if ($user.LastLogonDate) {{
+                return ([datetime]$user.LastLogonDate).Ticks
+            }}
+            return [long]::MinValue
+        }}
+        default {{
+            return [string]($(if ($user.DisplayName) {{ $user.DisplayName }} else {{ $user.Name }}))
+        }}
+    }}
+}}
+
+$results = @()
 foreach ($base in @({ous})) {{
     $results += Get-ADUser -Filter {filter} -Server '{server}' -SearchBase $base -SearchScope Subtree -Properties {props}
 }}
@@ -79,18 +99,33 @@ if ('{status_filter}' -eq 'enabled') {{
     $results = @($results | Where-Object {{ $_.LockedOut }})
 }}
 
-$sorted = @($results | Sort-Object -Property {sort_prop} -Descending:${sort_desc})
+$sorted = @($results | Sort-Object -Property @(
+    @{{ Expression = {{ Get-UserSortValue $_ }}; Descending = {sort_desc} }},
+    @{{ Expression = {{ [string]$_.Name }}; Descending = $false }}
+))
 $total = $sorted.Count
-$pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
-$pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [double]{page_size}) }}
+$useAll = {fetch_all}
+if ($useAll) {{
+    $pageItems = @($sorted)
+    $pageCount = if ($total -eq 0) {{ 0 }} else {{ 1 }}
+    $pageOut = 1
+    $pageSizeOut = if ($total -eq 0) {{ 0 }} else {{ $total }}
+    $hasMore = $false
+}} else {{
+    $pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
+    $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [double]{page_size}) }}
+    $pageOut = {page}
+    $pageSizeOut = {page_size}
+    $hasMore = (({page} * {page_size}) -lt $total)
+}}
 
 @{{
     items = @($pageItems | Select-Object {select})
     total = $total
-    page = {page}
-    page_size = {page_size}
+    page = $pageOut
+    page_size = $pageSizeOut
     page_count = $pageCount
-    has_more = (({page} * {page_size}) -lt $total)
+    has_more = $hasMore
 }} | ConvertTo-Json -Depth 4"#,
                 ous = ou_parts.join(","),
                 filter = filter_expr,
@@ -99,7 +134,8 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
                 select = select,
                 status_filter = status_filter,
                 sort_prop = sort_prop,
-                sort_desc = if sort_desc { "true" } else { "false" },
+                sort_desc = if sort_desc { "$true" } else { "$false" },
+                fetch_all = if fetch_all { "$true" } else { "$false" },
                 skip = skip,
                 page = page,
                 page_size = page_size,
@@ -109,7 +145,25 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
     }
 
     let script = format!(
-        r#"$results = @(Get-ADUser -Filter {filter} -Server '{server}' -Properties {props})
+        r#"function Get-UserSortValue([object] $user) {{
+    switch ('{sort_prop}') {{
+        'SamAccountName' {{ return [string]$user.SamAccountName }}
+        'Description' {{ return [string]$user.Description }}
+        'Department' {{ return [string]$user.Department }}
+        'Enabled' {{ return if ($user.Enabled) {{ 1 }} else {{ 0 }} }}
+        'LastLogonDate' {{
+            if ($user.LastLogonDate) {{
+                return ([datetime]$user.LastLogonDate).Ticks
+            }}
+            return [long]::MinValue
+        }}
+        default {{
+            return [string]($(if ($user.DisplayName) {{ $user.DisplayName }} else {{ $user.Name }}))
+        }}
+    }}
+}}
+
+$results = @(Get-ADUser -Filter {filter} -Server '{server}' -Properties {props})
 
 if ('{status_filter}' -eq 'enabled') {{
     $results = @($results | Where-Object {{ $_.Enabled }})
@@ -119,18 +173,33 @@ if ('{status_filter}' -eq 'enabled') {{
     $results = @($results | Where-Object {{ $_.LockedOut }})
 }}
 
-$sorted = @($results | Sort-Object -Property {sort_prop} -Descending:${sort_desc})
+$sorted = @($results | Sort-Object -Property @(
+    @{{ Expression = {{ Get-UserSortValue $_ }}; Descending = {sort_desc} }},
+    @{{ Expression = {{ [string]$_.Name }}; Descending = $false }}
+))
 $total = $sorted.Count
-$pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
-$pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [double]{page_size}) }}
+$useAll = {fetch_all}
+if ($useAll) {{
+    $pageItems = @($sorted)
+    $pageCount = if ($total -eq 0) {{ 0 }} else {{ 1 }}
+    $pageOut = 1
+    $pageSizeOut = if ($total -eq 0) {{ 0 }} else {{ $total }}
+    $hasMore = $false
+}} else {{
+    $pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
+    $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [double]{page_size}) }}
+    $pageOut = {page}
+    $pageSizeOut = {page_size}
+    $hasMore = (({page} * {page_size}) -lt $total)
+}}
 
 @{{
     items = @($pageItems | Select-Object {select})
     total = $total
-    page = {page}
-    page_size = {page_size}
+    page = $pageOut
+    page_size = $pageSizeOut
     page_count = $pageCount
-    has_more = (({page} * {page_size}) -lt $total)
+    has_more = $hasMore
 }} | ConvertTo-Json -Depth 4"#,
         filter = filter_expr,
         server = srv,
@@ -138,7 +207,8 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
         select = select,
         status_filter = status_filter,
         sort_prop = sort_prop,
-        sort_desc = if sort_desc { "true" } else { "false" },
+        sort_desc = if sort_desc { "$true" } else { "$false" },
+        fetch_all = if fetch_all { "$true" } else { "$false" },
         skip = skip,
         page = page,
         page_size = page_size,

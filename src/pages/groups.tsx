@@ -35,7 +35,7 @@ export default function GroupsPage() {
   const [page, setPage]                       = useState(1);
   const [pageSize, setPageSize]               = useState(100);
 
-  const { data, isLoading, error } = useGroups({
+  const { data, isLoading, isFetching, error } = useGroups({
     search: debouncedSearch || undefined,
     page,
     pageSize,
@@ -77,6 +77,12 @@ export default function GroupsPage() {
           <span className="text-[11px] text-muted-foreground font-mono bg-secondary px-1.5 py-0.5 rounded-md ml-1">
             {totalGroups}
           </span>
+          {isFetching && !isLoading && (
+            <span className="flex items-center gap-1 rounded-md border border-border bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Updating
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button

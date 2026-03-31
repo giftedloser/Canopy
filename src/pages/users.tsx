@@ -54,7 +54,7 @@ export default function UsersPage() {
     x: number; y: number; sam: string; enabled: boolean; locked: boolean;
   } | null>(null);
 
-  const { data, isLoading, error } = useUsers({
+  const { data, isLoading, isFetching, error } = useUsers({
     search: debouncedSearch || undefined,
     status: statusFilter,
     page,
@@ -112,6 +112,12 @@ export default function UsersPage() {
           <span className="text-[11px] text-muted-foreground font-mono bg-secondary px-1.5 py-0.5 rounded-md ml-1">
             {totalUsers}
           </span>
+          {isFetching && !isLoading && (
+            <span className="flex items-center gap-1 rounded-md border border-border bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Updating
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button

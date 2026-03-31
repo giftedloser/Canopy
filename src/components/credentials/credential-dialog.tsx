@@ -91,6 +91,7 @@ export function CredentialDialog({ open, onOpenChange }: CredentialDialogProps) 
               placeholder="dc01.contoso.com"
               value={serverOverride}
               onChange={setServerOverrideInput}
+              autoComplete="off"
               mono
               onKeyDown={(e) => e.key === "Enter" && handleConnect()}
             />
@@ -142,6 +143,7 @@ function InputField({
   onChange,
   type = "text",
   mono = false,
+  autoComplete,
   onKeyDown,
 }: {
   icon: any;
@@ -151,6 +153,7 @@ function InputField({
   onChange: (v: string) => void;
   type?: string;
   mono?: boolean;
+  autoComplete?: string;
   onKeyDown?: (e: React.KeyboardEvent) => void;
 }) {
   return (
@@ -165,6 +168,7 @@ function InputField({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          autoComplete={autoComplete}
           onKeyDown={onKeyDown}
           className={cn(
             "input-base w-full pl-9",

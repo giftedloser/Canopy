@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useCredentialStore } from "@/stores/credential-store";
+import { useOuScopeStore } from "@/stores/ou-scope-store";
 import { useDashboardStats } from "@/hooks/use-ad-reports";
 import { useGroupMembers } from "@/hooks/use-ad-groups";
 import { useUnlockUser, useResetPassword } from "@/hooks/use-ad-users";
@@ -36,6 +37,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const isConnected    = useCredentialStore((s) => s.isConnected);
   const connectionInfo = useCredentialStore((s) => s.connectionInfo);
+  const isOuVisible = useOuScopeStore((s) => s.isOuVisible);
   const { data: stats, isLoading, error } = useDashboardStats();
   const pastDueSectionRef = useRef<HTMLDivElement | null>(null);
   const [pastDueEnabled, setPastDueEnabled] = useState(false);
@@ -67,6 +69,10 @@ export default function Dashboard() {
   const { data: pastDueMembers, isLoading: pastDueLoading } = useGroupMembers(
     isConnected && pastDueEnabled ? "Security_PastDue_KB4" : null
   );
+  const scopedPastDueMembers = (pastDueMembers ?? []).filter((member: any) => {
+    const dn = member?.DistinguishedName || member?.distinguishedName;
+    return typeof dn !== "string" || isOuVisible(dn);
+  });
 
   if (!isConnected) {
     return (
@@ -127,7 +133,7 @@ export default function Dashboard() {
       <div ref={pastDueSectionRef}>
         <SectionLabel>Security Training — Past Due</SectionLabel>
         <PastDueGroupCard
-          members={pastDueMembers}
+          members={scopedPastDueMembers}
           isLoading={pastDueEnabled && pastDueLoading}
           pendingLoad={!pastDueEnabled}
         />

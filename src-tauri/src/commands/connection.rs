@@ -70,12 +70,71 @@ $connectedAs = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 #[tauri::command]
 pub async fn get_dashboard_stats(
     server: String,
+    ou_scopes: Option<Vec<String>>,
 ) -> Result<String, String> {
     let server = server.trim().to_string();
     if server.is_empty() {
         return Err("Server is required".to_string());
     }
     let srv = sanitizer::sanitize_ps_string(&server)?;
+    let has_ou_scopes = matches!(ou_scopes.as_ref(), Some(scopes) if !scopes.is_empty());
+    let scope_helpers = if let Some(ref scopes) = ou_scopes {
+        if !scopes.is_empty() {
+            let mut ou_parts = Vec::new();
+            for scope in scopes {
+                let safe = sanitizer::sanitize_dn(scope)?;
+                ou_parts.push(format!("'{}'", safe));
+            }
+
+            format!(
+                r#"
+function Get-ScopedUsers {{
+    $scoped = @()
+    foreach ($base in @({ous})) {{
+        $scoped += Get-ADUser -Filter * -Server $s -SearchBase $base -SearchScope Subtree -Properties Enabled,LockedOut,LastLogonDate,PasswordNeverExpires,'msDS-UserPasswordExpiryTimeComputed'
+    }}
+    return @($scoped | Sort-Object DistinguishedName -Unique)
+}}
+
+function Get-ScopedComputers {{
+    $scoped = @()
+    foreach ($base in @({ous})) {{
+        $scoped += Get-ADComputer -Filter * -Server $s -SearchBase $base -SearchScope Subtree -Properties DistinguishedName
+    }}
+    return @($scoped | Sort-Object DistinguishedName -Unique)
+}}
+
+function Get-ScopedGroups {{
+    $scoped = @()
+    foreach ($base in @({ous})) {{
+        $scoped += Get-ADGroup -Filter * -Server $s -SearchBase $base -SearchScope Subtree -Properties DistinguishedName
+    }}
+    return @($scoped | Sort-Object DistinguishedName -Unique)
+}}
+"#,
+                ous = ou_parts.join(",")
+            )
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
+    let users_expr = if has_ou_scopes {
+        "Get-ScopedUsers".to_string()
+    } else {
+        "Get-ADUser -Filter * -Server $s -Properties Enabled,LockedOut,LastLogonDate,PasswordNeverExpires,'msDS-UserPasswordExpiryTimeComputed'".to_string()
+    };
+    let computers_expr = if has_ou_scopes {
+        "@(Get-ScopedComputers).Count".to_string()
+    } else {
+        "@(Get-ADComputer -Filter * -Server $s).Count".to_string()
+    };
+    let groups_expr = if has_ou_scopes {
+        "@(Get-ScopedGroups).Count".to_string()
+    } else {
+        "@(Get-ADGroup -Filter * -Server $s).Count".to_string()
+    };
 
     let script = format!(
         r#"
@@ -88,6 +147,7 @@ function Count-Safely([ScriptBlock] $op) {{
         return 0
     }}
 }}
+{scope_helpers}
 
 $totalUsers = 0
 $enabledUsers = 0
@@ -101,7 +161,7 @@ $passwordNeverExpires = 0
 try {{
     $expiringCutoff = (Get-Date).AddDays(14)
     $inactiveCutoff = (Get-Date).AddDays(-90)
-    $users = @(Get-ADUser -Filter * -Server $s -Properties Enabled,LockedOut,LastLogonDate,PasswordNeverExpires,'msDS-UserPasswordExpiryTimeComputed')
+    $users = @({users_expr})
 
     $totalUsers = $users.Count
 
@@ -153,8 +213,8 @@ try {{
     $passwordNeverExpires = 0
 }}
 
-$totalComputers = Count-Safely {{ @(Get-ADComputer -Filter * -Server $s).Count }}
-$totalGroups = Count-Safely {{ @(Get-ADGroup -Filter * -Server $s).Count }}
+$totalComputers = Count-Safely {{ {computers_expr} }}
+$totalGroups = Count-Safely {{ {groups_expr} }}
 
 @{{
     total_users = $totalUsers
@@ -169,7 +229,11 @@ $totalGroups = Count-Safely {{ @(Get-ADGroup -Filter * -Server $s).Count }}
     password_never_expires = $passwordNeverExpires
 }} | ConvertTo-Json
 "#,
-        server = srv
+        server = srv,
+        scope_helpers = scope_helpers,
+        users_expr = users_expr,
+        computers_expr = computers_expr,
+        groups_expr = groups_expr,
     );
 
     executor::execute_ps_script(&script)
@@ -178,24 +242,60 @@ $totalGroups = Count-Safely {{ @(Get-ADGroup -Filter * -Server $s).Count }}
 #[tauri::command]
 pub async fn get_computer_os_breakdown(
     server: String,
+    ou_scopes: Option<Vec<String>>,
 ) -> Result<String, String> {
     let server = server.trim().to_string();
     if server.is_empty() {
         return Err("Server is required".to_string());
     }
     let srv = sanitizer::sanitize_ps_string(&server)?;
+    let has_ou_scopes = matches!(ou_scopes.as_ref(), Some(scopes) if !scopes.is_empty());
+    let scope_helpers = if let Some(ref scopes) = ou_scopes {
+        if !scopes.is_empty() {
+            let mut ou_parts = Vec::new();
+            for scope in scopes {
+                let safe = sanitizer::sanitize_dn(scope)?;
+                ou_parts.push(format!("'{}'", safe));
+            }
+
+            format!(
+                r#"
+function Get-ScopedComputersForBreakdown {{
+    $scoped = @()
+    foreach ($base in @({ous})) {{
+        $scoped += Get-ADComputer -Filter * -Properties OperatingSystem,DistinguishedName -Server $s -SearchBase $base -SearchScope Subtree
+    }}
+    return @($scoped | Sort-Object DistinguishedName -Unique)
+}}
+"#,
+                ous = ou_parts.join(",")
+            )
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
+    let computers_expr = if has_ou_scopes {
+        "Get-ScopedComputersForBreakdown".to_string()
+    } else {
+        "Get-ADComputer -Filter * -Properties OperatingSystem -Server $s".to_string()
+    };
 
     let script = format!(
         r#"
 $ErrorActionPreference = 'Stop'
 $s = '{server}'
-$breakdown = @(Get-ADComputer -Filter * -Properties OperatingSystem -Server $s |
+{scope_helpers}
+$breakdown = @(@({computers_expr}) |
     Group-Object OperatingSystem |
     Sort-Object Count -Descending |
     Select-Object @{{N='os';E={{if($_.Name){{$_.Name}}else{{'Unknown'}}}}}}, Count)
 if ($breakdown.Count -eq 0) {{ @() | ConvertTo-Json -Compress }} else {{ $breakdown | ConvertTo-Json -Compress }}
 "#,
-        server = srv
+        server = srv,
+        scope_helpers = scope_helpers,
+        computers_expr = computers_expr,
     );
 
     executor::execute_ps_script(&script)

@@ -146,13 +146,19 @@ export async function testConnection(serverOverride?: string) {
   });
 }
 
-export async function getDashboardStats() {
-  return invokeRead<string>("get_dashboard_stats");
+export async function getDashboardStats(ouScopes?: string[]) {
+  return invokeRead<string>("get_dashboard_stats", {
+    ouScopes,
+    ou_scopes: ouScopes,
+  });
 }
 
 
-export async function getComputerOsBreakdown() {
-  return invokeRead<string>("get_computer_os_breakdown");
+export async function getComputerOsBreakdown(ouScopes?: string[]) {
+  return invokeRead<string>("get_computer_os_breakdown", {
+    ouScopes,
+    ou_scopes: ouScopes,
+  });
 }
 
 // Users (read)
@@ -168,6 +174,7 @@ export async function getUsersPage(params: {
   pageSize?: number;
   sortBy?: string;
   sortDir?: "asc" | "desc";
+  fetchAll?: boolean;
 }) {
   return invokeRead<string>("get_users", {
     search: params.search,
@@ -181,6 +188,8 @@ export async function getUsersPage(params: {
     sortBy: params.sortBy,
     sort_dir: params.sortDir,
     sortDir: params.sortDir,
+    fetch_all: params.fetchAll,
+    fetchAll: params.fetchAll,
   });
 }
 
@@ -260,6 +269,7 @@ export async function getComputersPage(params: {
   pageSize?: number;
   sortBy?: string;
   sortDir?: "asc" | "desc";
+  fetchAll?: boolean;
 }) {
   return invokeRead<string>("get_computers", {
     search: params.search,
@@ -272,6 +282,8 @@ export async function getComputersPage(params: {
     sortBy: params.sortBy,
     sort_dir: params.sortDir,
     sortDir: params.sortDir,
+    fetch_all: params.fetchAll,
+    fetchAll: params.fetchAll,
   });
 }
 
@@ -367,8 +379,12 @@ export async function getOuContents(ouDn: string) {
 }
 
 // Reports
-export async function runReport(reportType: string) {
-  return invokeRead<string>("run_report", { reportType });
+export async function runReport(reportType: string, ouScopes?: string[]) {
+  return invokeRead<string>("run_report", {
+    reportType,
+    ouScopes,
+    ou_scopes: ouScopes,
+  });
 }
 
 export function getPreferredElevationUsername() {

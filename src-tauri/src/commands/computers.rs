@@ -9,6 +9,7 @@ pub async fn get_computers(
     page_size: Option<u32>,
     sort_by: Option<String>,
     sort_dir: Option<String>,
+    fetch_all: Option<bool>,
 ) -> Result<String, String> {
     let server = server.trim().to_string();
     if server.is_empty() {
@@ -17,6 +18,7 @@ pub async fn get_computers(
     let srv = sanitizer::sanitize_ps_string(&server)?;
     let page = page.unwrap_or(1).max(1);
     let page_size = page_size.unwrap_or(100).clamp(25, 200);
+    let fetch_all = fetch_all.unwrap_or(false);
     let skip = (page - 1) * page_size;
 
     let props = "Name,OperatingSystem,OperatingSystemVersion,LastLogonDate,Enabled,IPv4Address,DistinguishedName,WhenCreated,Description,DNSHostName,Location";
@@ -47,23 +49,54 @@ pub async fn get_computers(
                 ou_parts.push(format!("'{}'", safe));
             }
             let script = format!(
-                r#"$results = @()
+                r#"function Get-ComputerSortValue([object] $computer) {{
+    switch ('{sort_prop}') {{
+        'Description' {{ return [string]$computer.Description }}
+        'OperatingSystem' {{ return [string]$computer.OperatingSystem }}
+        'LastLogonDate' {{
+            if ($computer.LastLogonDate) {{
+                return ([datetime]$computer.LastLogonDate).Ticks
+            }}
+            return [long]::MinValue
+        }}
+        'IPv4Address' {{ return [string]$computer.IPv4Address }}
+        'Enabled' {{ return if ($computer.Enabled) {{ 1 }} else {{ 0 }} }}
+        default {{ return [string]$computer.Name }}
+    }}
+}}
+
+$results = @()
 foreach ($base in @({ous})) {{
     $results += Get-ADComputer -Filter {filter} -Server '{server}' -SearchBase $base -SearchScope Subtree -Properties {props}
 }}
 $results = @($results | Sort-Object DistinguishedName -Unique)
-$sorted = @($results | Sort-Object -Property {sort_prop} -Descending:${sort_desc})
+$sorted = @($results | Sort-Object -Property @(
+    @{{ Expression = {{ Get-ComputerSortValue $_ }}; Descending = {sort_desc} }},
+    @{{ Expression = {{ [string]$_.Name }}; Descending = $false }}
+))
 $total = $sorted.Count
-$pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
-$pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [double]{page_size}) }}
+$useAll = {fetch_all}
+if ($useAll) {{
+    $pageItems = @($sorted)
+    $pageCount = if ($total -eq 0) {{ 0 }} else {{ 1 }}
+    $pageOut = 1
+    $pageSizeOut = if ($total -eq 0) {{ 0 }} else {{ $total }}
+    $hasMore = $false
+}} else {{
+    $pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
+    $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [double]{page_size}) }}
+    $pageOut = {page}
+    $pageSizeOut = {page_size}
+    $hasMore = (({page} * {page_size}) -lt $total)
+}}
 
 @{{
     items = @($pageItems | Select-Object {select})
     total = $total
-    page = {page}
-    page_size = {page_size}
+    page = $pageOut
+    page_size = $pageSizeOut
     page_count = $pageCount
-    has_more = (({page} * {page_size}) -lt $total)
+    has_more = $hasMore
 }} | ConvertTo-Json -Depth 4"#,
                 ous = ou_parts.join(","),
                 filter = filter_expr,
@@ -71,7 +104,8 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
                 props = props,
                 select = select,
                 sort_prop = sort_prop,
-                sort_desc = if sort_desc { "true" } else { "false" },
+                sort_desc = if sort_desc { "$true" } else { "$false" },
+                fetch_all = if fetch_all { "$true" } else { "$false" },
                 skip = skip,
                 page = page,
                 page_size = page_size,
@@ -81,26 +115,58 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
     }
 
     let script = format!(
-        r#"$results = @(Get-ADComputer -Filter {filter} -Server '{server}' -Properties {props})
-$sorted = @($results | Sort-Object -Property {sort_prop} -Descending:${sort_desc})
+        r#"function Get-ComputerSortValue([object] $computer) {{
+    switch ('{sort_prop}') {{
+        'Description' {{ return [string]$computer.Description }}
+        'OperatingSystem' {{ return [string]$computer.OperatingSystem }}
+        'LastLogonDate' {{
+            if ($computer.LastLogonDate) {{
+                return ([datetime]$computer.LastLogonDate).Ticks
+            }}
+            return [long]::MinValue
+        }}
+        'IPv4Address' {{ return [string]$computer.IPv4Address }}
+        'Enabled' {{ return if ($computer.Enabled) {{ 1 }} else {{ 0 }} }}
+        default {{ return [string]$computer.Name }}
+    }}
+}}
+
+$results = @(Get-ADComputer -Filter {filter} -Server '{server}' -Properties {props})
+$sorted = @($results | Sort-Object -Property @(
+    @{{ Expression = {{ Get-ComputerSortValue $_ }}; Descending = {sort_desc} }},
+    @{{ Expression = {{ [string]$_.Name }}; Descending = $false }}
+))
 $total = $sorted.Count
-$pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
-$pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [double]{page_size}) }}
+$useAll = {fetch_all}
+if ($useAll) {{
+    $pageItems = @($sorted)
+    $pageCount = if ($total -eq 0) {{ 0 }} else {{ 1 }}
+    $pageOut = 1
+    $pageSizeOut = if ($total -eq 0) {{ 0 }} else {{ $total }}
+    $hasMore = $false
+}} else {{
+    $pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
+    $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [double]{page_size}) }}
+    $pageOut = {page}
+    $pageSizeOut = {page_size}
+    $hasMore = (({page} * {page_size}) -lt $total)
+}}
 
 @{{
     items = @($pageItems | Select-Object {select})
     total = $total
-    page = {page}
-    page_size = {page_size}
+    page = $pageOut
+    page_size = $pageSizeOut
     page_count = $pageCount
-    has_more = (({page} * {page_size}) -lt $total)
+    has_more = $hasMore
 }} | ConvertTo-Json -Depth 4"#,
         filter = filter_expr,
         server = srv,
         props = props,
         select = select,
         sort_prop = sort_prop,
-        sort_desc = if sort_desc { "true" } else { "false" },
+        sort_desc = if sort_desc { "$true" } else { "$false" },
+        fetch_all = if fetch_all { "$true" } else { "$false" },
         skip = skip,
         page = page,
         page_size = page_size,

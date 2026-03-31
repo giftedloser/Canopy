@@ -77,6 +77,16 @@ pub async fn get_groups(
     }}
 }}
 
+function Get-GroupSortValue([object] $group) {{
+    switch ('{sort_prop}') {{
+        'GroupCategory' {{ return [string]$group.GroupCategory }}
+        'GroupScope' {{ return [string]$group.GroupScope }}
+        'Description' {{ return [string]$group.Description }}
+        'MemberCount' {{ return [int]$group.MemberCount }}
+        default {{ return [string]$group.Name }}
+    }}
+}}
+
 $results = @()
 foreach ($base in @({ous})) {{
     if (${sort_by_member_count}) {{
@@ -88,12 +98,18 @@ foreach ($base in @({ous})) {{
 $results = @($results | Sort-Object DistinguishedName -Unique)
 
 if (${sort_by_member_count}) {{
-    $results = @($results | Select-Object Name,SamAccountName,GroupCategory,GroupScope,Description,WhenCreated,ManagedBy,DistinguishedName,@{{Name='MemberCount';Expression={{ @($_.Members).Count }}}})
-    $sorted = @($results | Sort-Object -Property {sort_prop} -Descending:${sort_desc})
+        $results = @($results | Select-Object Name,SamAccountName,GroupCategory,GroupScope,Description,WhenCreated,ManagedBy,DistinguishedName,@{{Name='MemberCount';Expression={{ @($_.Members).Count }}}})
+        $sorted = @($results | Sort-Object -Property @(
+        @{{ Expression = {{ Get-GroupSortValue $_ }}; Descending = {sort_desc} }},
+        @{{ Expression = {{ [string]$_.Name }}; Descending = $false }}
+    ))
     $total = $sorted.Count
     $pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
 }} else {{
-    $sorted = @($results | Sort-Object -Property {sort_prop} -Descending:${sort_desc})
+    $sorted = @($results | Sort-Object -Property @(
+        @{{ Expression = {{ Get-GroupSortValue $_ }}; Descending = {sort_desc} }},
+        @{{ Expression = {{ [string]$_.Name }}; Descending = $false }}
+    ))
     $total = $sorted.Count
     $pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
 
@@ -119,7 +135,7 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
                 base_props = base_props,
                 select = select,
                 sort_prop = sort_prop,
-                sort_desc = if sort_desc { "true" } else { "false" },
+                sort_desc = if sort_desc { "$true" } else { "$false" },
                 sort_by_member_count = if sort_by_member_count { "true" } else { "false" },
                 include_member_counts = if include_member_counts { "true" } else { "false" },
                 skip = skip,
@@ -159,15 +175,31 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
     }}
 }}
 
+function Get-GroupSortValue([object] $group) {{
+    switch ('{sort_prop}') {{
+        'GroupCategory' {{ return [string]$group.GroupCategory }}
+        'GroupScope' {{ return [string]$group.GroupScope }}
+        'Description' {{ return [string]$group.Description }}
+        'MemberCount' {{ return [int]$group.MemberCount }}
+        default {{ return [string]$group.Name }}
+    }}
+}}
+
 if (${sort_by_member_count}) {{
     $results = @(Get-ADGroup -Filter {filter} -Server '{server}' -Properties Description,WhenCreated,ManagedBy,Members |
         Select-Object Name,SamAccountName,GroupCategory,GroupScope,Description,WhenCreated,ManagedBy,DistinguishedName,@{{Name='MemberCount';Expression={{ @($_.Members).Count }}}})
-    $sorted = @($results | Sort-Object -Property {sort_prop} -Descending:${sort_desc})
+    $sorted = @($results | Sort-Object -Property @(
+        @{{ Expression = {{ Get-GroupSortValue $_ }}; Descending = {sort_desc} }},
+        @{{ Expression = {{ [string]$_.Name }}; Descending = $false }}
+    ))
     $total = $sorted.Count
     $pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
 }} else {{
     $results = @(Get-ADGroup -Filter {filter} -Server '{server}' -Properties {base_props})
-    $sorted = @($results | Sort-Object -Property {sort_prop} -Descending:${sort_desc})
+    $sorted = @($results | Sort-Object -Property @(
+        @{{ Expression = {{ Get-GroupSortValue $_ }}; Descending = {sort_desc} }},
+        @{{ Expression = {{ [string]$_.Name }}; Descending = $false }}
+    ))
     $total = $sorted.Count
     $pageItems = if ({skip} -lt $total) {{ @($sorted | Select-Object -Skip {skip} -First {page_size}) }} else {{ @() }}
 
@@ -192,7 +224,7 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
         base_props = base_props,
         select = select,
         sort_prop = sort_prop,
-        sort_desc = if sort_desc { "true" } else { "false" },
+        sort_desc = if sort_desc { "$true" } else { "$false" },
         sort_by_member_count = if sort_by_member_count { "true" } else { "false" },
         include_member_counts = if include_member_counts { "true" } else { "false" },
         skip = skip,
@@ -202,6 +234,7 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
 
     executor::execute_ps_script(&script)
 }
+
 
 #[tauri::command]
 pub async fn get_group_members(

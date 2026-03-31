@@ -35,8 +35,8 @@ const routeLabels: Record<string, string> = {
 
 const routeRefreshKeys: Record<string, string[]> = {
   "/": ["dashboard-stats", "computer-os-breakdown", "group-members"],
-  "/users": ["users", "user-detail"],
-  "/computers": ["computers", "computer-detail"],
+  "/users": ["users-snapshot", "user-detail"],
+  "/computers": ["computers-snapshot", "computer-detail"],
   "/groups": ["groups", "group-members"],
   "/reports": ["report"],
   "/directory": ["ou-tree", "ou-contents"],

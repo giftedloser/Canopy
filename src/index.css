@@ -330,11 +330,35 @@ body {
   border: 1px solid var(--color-border);
   background: var(--color-secondary);
   font-size: 12px;
+  line-height: 1.2;
   color: var(--color-foreground);
+  caret-color: var(--color-foreground);
   transition: border-color 0.15s, box-shadow 0.15s;
   outline: none;
 }
-.input-base::placeholder { color: var(--color-muted-foreground); opacity: 0.5; }
+.input-base::placeholder {
+  color: var(--color-muted-foreground);
+  opacity: 0.5;
+  transition: opacity 0.12s ease-out, color 0.12s ease-out;
+}
+.input-base:not(:placeholder-shown)::placeholder {
+  color: transparent;
+  opacity: 0;
+}
+.input-base[type="password"] {
+  font-family: var(--font-sans);
+}
+.input-base[type="password"]::-ms-reveal,
+.input-base[type="password"]::-ms-clear {
+  display: none;
+}
+.input-base:-webkit-autofill,
+.input-base:-webkit-autofill:hover,
+.input-base:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-foreground);
+  box-shadow: 0 0 0px 1000px var(--color-secondary) inset;
+  transition: background-color 99999s ease-out;
+}
 .input-base:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px hsl(38 92% 54% / 0.15);
