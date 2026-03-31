@@ -27,9 +27,10 @@ const navItems = [
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  onTitleBarMouseDown?: (event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
-export function Sidebar({ collapsed, onToggle }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle, onTitleBarMouseDown }: SidebarProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [settingsHovered, setSettingsHovered] = useState(false);
   const connectionInfo = useCredentialStore((s) => s.connectionInfo);
@@ -48,7 +49,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Logo */}
       <div
         className="relative flex items-center h-[52px] px-3 border-b border-sidebar-border shrink-0"
-        data-tauri-drag-region
+        onMouseDown={onTitleBarMouseDown}
       >
         <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
           {/* Logo mark */}

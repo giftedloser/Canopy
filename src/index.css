@@ -247,6 +247,28 @@ body {
 
 /* ─── Tauri ──────────────────────────────────────────────────── */
 [data-tauri-drag-region] { -webkit-user-select: none; user-select: none; }
+.window-control-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted-foreground);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.window-control-button:hover {
+  background: var(--color-secondary);
+  color: var(--color-foreground);
+}
+.window-control-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(38 92% 54% / 0.2);
+}
+.window-control-close:hover {
+  background: var(--color-destructive);
+  color: var(--color-destructive-foreground);
+}
 
 /* ─── Dot grid (sidebar texture) ────────────────────────────── */
 .dot-grid {

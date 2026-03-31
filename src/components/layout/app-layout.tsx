@@ -9,6 +9,15 @@ import { SearchCommand } from "@/components/shared/search-command";
 import { testConnection } from "@/lib/tauri-ad";
 import { normalizeConnectionPayload } from "@/lib/connection-response";
 import {
+  closeAppWindow,
+  getWindowMaximizedState,
+  minimizeAppWindow,
+  onWindowResized,
+  startAppWindowDragging,
+  supportsCustomWindowShell,
+  toggleAppWindowMaximize,
+} from "@/lib/window-shell";
+import {
   Search,
   Sun,
   Moon,
@@ -19,6 +28,7 @@ import {
   Command,
   ChevronRight,
   RefreshCw,
+  X,
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import { queryClient } from "@/lib/query-client";
@@ -49,7 +59,9 @@ export function AppLayout() {
   const [showSearch, setShowSearch]     = useState(false);
   const [autoConnecting, setAutoConnecting] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isWindowMaximized, setIsWindowMaximized] = useState(false);
   const location = useLocation();
+  const hasCustomWindowShell = supportsCustomWindowShell();
 
   const {
     isConnected,
@@ -102,18 +114,63 @@ export function AppLayout() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  useEffect(() => {
+    if (!hasCustomWindowShell) return;
+
+    let unlisten: (() => void) | undefined;
+    let cancelled = false;
+
+    const syncMaximizeState = async () => {
+      const maximized = await getWindowMaximizedState().catch(() => false);
+      if (!cancelled) {
+        setIsWindowMaximized(maximized);
+      }
+    };
+
+    void syncMaximizeState();
+    void onWindowResized(syncMaximizeState).then((dispose) => {
+      if (cancelled) {
+        dispose();
+        return;
+      }
+      unlisten = dispose;
+    });
+
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, [hasCustomWindowShell]);
+
+  const handleTitleBarMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!hasCustomWindowShell || event.button !== 0) return;
+
+    if (event.detail === 2) {
+      void toggleAppWindowMaximize()
+        .then(() => getWindowMaximizedState())
+        .then(setIsWindowMaximized)
+        .catch(() => {});
+      return;
+    }
+
+    void startAppWindowDragging().catch(() => {});
+  };
+
   return (
     <div className="flex h-screen w-screen overflow-hidden">
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(!collapsed)}
+        onTitleBarMouseDown={handleTitleBarMouseDown}
+      />
 
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <header
-          className="flex items-center justify-between h-[52px] px-4 border-b border-border bg-background/90 backdrop-blur-md shrink-0"
-          data-tauri-drag-region
+          className="flex items-center h-[52px] px-4 border-b border-border bg-background/90 backdrop-blur-md shrink-0"
         >
           {/* Left: breadcrumb */}
-          <div className="flex items-center gap-2 select-none" data-tauri-drag-region>
+          <div className="flex items-center gap-2 min-w-0">
             {/* Search button */}
             <button
               onClick={() => setShowSearch(true)}
@@ -129,15 +186,23 @@ export function AppLayout() {
 
             {/* Page breadcrumb */}
             {pageLabel && (
-              <>
+              <div
+                className="flex items-center gap-2 min-w-0 select-none"
+                onMouseDown={handleTitleBarMouseDown}
+              >
                 <ChevronRight className="w-3 h-3 text-border" />
                 <span className="text-[12px] font-medium text-muted-foreground">{pageLabel}</span>
-              </>
+              </div>
             )}
           </div>
 
+          <div
+            className="flex-1 h-full min-w-[32px]"
+            onMouseDown={handleTitleBarMouseDown}
+          />
+
           {/* Right: status + theme */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 pl-3">
             {/* Refresh button */}
             {isConnected && (
               <button
@@ -238,6 +303,49 @@ export function AppLayout() {
                theme === "midnight" ? <TreePine className="w-3.5 h-3.5" /> :
                <Sun className="w-3.5 h-3.5" />}
             </button>
+
+            {hasCustomWindowShell && (
+              <>
+                <div className="w-px h-4 bg-border" />
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => void minimizeAppWindow()}
+                    className="window-control-button"
+                    title="Minimize"
+                    aria-label="Minimize window"
+                  >
+                    <span className="block h-px w-3 bg-current" />
+                  </button>
+                  <button
+                    onClick={() =>
+                      void toggleAppWindowMaximize().then(() => {
+                        void getWindowMaximizedState().then(setIsWindowMaximized).catch(() => {});
+                      })
+                    }
+                    className="window-control-button"
+                    title={isWindowMaximized ? "Restore" : "Maximize"}
+                    aria-label={isWindowMaximized ? "Restore window" : "Maximize window"}
+                  >
+                    {isWindowMaximized ? (
+                      <span className="relative block h-3 w-3">
+                        <span className="absolute right-0 top-0 h-[8px] w-[8px] border border-current bg-transparent" />
+                        <span className="absolute bottom-0 left-0 h-[8px] w-[8px] border border-current bg-transparent" />
+                      </span>
+                    ) : (
+                      <span className="block h-3 w-3 border border-current" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => void closeAppWindow()}
+                    className="window-control-button window-control-close"
+                    title="Close"
+                    aria-label="Close window"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </header>
 
