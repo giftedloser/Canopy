@@ -79,7 +79,8 @@ export function ElevationDialog() {
               placeholder="contoso.com"
               value={domain}
               onChange={setDomain}
-              autoComplete="organization"
+              autoComplete="off"
+              name="elevation-domain"
               mono
             />
             <InputField
@@ -88,7 +89,8 @@ export function ElevationDialog() {
               placeholder="administrator"
               value={username}
               onChange={setUsername}
-              autoComplete="username"
+              autoComplete="off"
+              name="elevation-username"
             />
             <InputField
               icon={Lock}
@@ -97,7 +99,8 @@ export function ElevationDialog() {
               type="password"
               value={password}
               onChange={setPassword}
-              autoComplete="current-password"
+              autoComplete="new-password"
+              name="elevation-password"
               onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             />
 
@@ -138,6 +141,7 @@ function InputField({
   type = "text",
   mono = false,
   autoComplete,
+  name,
   onKeyDown,
 }: {
   icon: any;
@@ -148,6 +152,7 @@ function InputField({
   type?: string;
   mono?: boolean;
   autoComplete?: string;
+  name?: string;
   onKeyDown?: (e: React.KeyboardEvent) => void;
 }) {
   return (
@@ -163,7 +168,14 @@ function InputField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           autoComplete={autoComplete}
+          name={name}
           onKeyDown={onKeyDown}
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="none"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-form-type="other"
           className={cn("input-base w-full pl-9", mono && "font-mono")}
         />
       </div>

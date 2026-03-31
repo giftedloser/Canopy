@@ -142,6 +142,14 @@ export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password"
+                autoComplete="new-password"
+                name="user-detail-reset-password"
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="none"
+                data-lpignore="true"
+                data-1p-ignore="true"
+                data-form-type="other"
                 className="input-base flex-1"
                 autoFocus
               />

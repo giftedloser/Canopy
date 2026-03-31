@@ -145,6 +145,14 @@ export default function UsersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name, username, employee # or description..."
+            autoComplete="off"
+            name="users-search"
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="none"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-form-type="other"
             className="input-base w-full pl-9"
           />
         </div>
@@ -525,6 +533,13 @@ function FormField({ label, value, onChange, type = "text", mono = false, placeh
       <label className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted-foreground/60">{label}</label>
       <input
         type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        autoComplete="off"
+        spellCheck={false}
+        autoCorrect="off"
+        autoCapitalize="none"
+        data-lpignore="true"
+        data-1p-ignore="true"
+        data-form-type="other"
         className={cn("input-base w-full", mono && "font-mono")}
       />
     </div>

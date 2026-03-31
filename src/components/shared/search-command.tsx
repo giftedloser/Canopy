@@ -232,6 +232,14 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Search users, computers, groups..."
+              autoComplete="off"
+              name="command-search"
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="none"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-form-type="other"
               className="flex-1 h-12 bg-transparent text-[14px] placeholder:text-muted-foreground/40 focus:outline-none"
             />
             <button

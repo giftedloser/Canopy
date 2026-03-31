@@ -192,6 +192,14 @@ function ElevationDefaultsSection() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="administrator"
+              autoComplete="off"
+              name="preferred-elevation-username"
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="none"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-form-type="other"
               className="input-base w-full pl-9"
             />
           </div>

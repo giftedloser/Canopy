@@ -92,6 +92,7 @@ export function CredentialDialog({ open, onOpenChange }: CredentialDialogProps) 
               value={serverOverride}
               onChange={setServerOverrideInput}
               autoComplete="off"
+              name="server-override"
               mono
               onKeyDown={(e) => e.key === "Enter" && handleConnect()}
             />
@@ -144,6 +145,7 @@ function InputField({
   type = "text",
   mono = false,
   autoComplete,
+  name,
   onKeyDown,
 }: {
   icon: any;
@@ -154,6 +156,7 @@ function InputField({
   type?: string;
   mono?: boolean;
   autoComplete?: string;
+  name?: string;
   onKeyDown?: (e: React.KeyboardEvent) => void;
 }) {
   return (
@@ -169,7 +172,14 @@ function InputField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           autoComplete={autoComplete}
+          name={name}
           onKeyDown={onKeyDown}
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="none"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-form-type="other"
           className={cn(
             "input-base w-full pl-9",
             mono && "font-mono"

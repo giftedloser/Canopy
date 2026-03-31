@@ -73,9 +73,9 @@ function UserStatusChart({ stats }: { stats: any }) {
         User Status
       </p>
       <div className="grid grid-cols-1 md:grid-cols-[220px_minmax(0,1fr)] gap-6 items-center">
-        <div className="relative mx-auto h-[220px] w-[220px]">
+        <div className="dashboard-donut-chart relative mx-auto h-[220px] w-[220px]">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
+            <PieChart accessibilityLayer={false}>
               <defs>
                 {data.map((d) => (
                   <filter key={d.name} id={`glow-${d.name}`}>
@@ -98,7 +98,9 @@ function UserStatusChart({ stats }: { stats: any }) {
                 paddingAngle={3}
                 dataKey="value"
                 stroke="none"
+                activeShape={{ stroke: "none", strokeWidth: 0 }}
                 cornerRadius={5}
+                rootTabIndex={-1}
               >
                 {data.map((d, i) => (
                   <Cell

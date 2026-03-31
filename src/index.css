@@ -352,6 +352,12 @@ body {
 .input-base[type="password"]::-ms-clear {
   display: none;
 }
+.input-base::-webkit-credentials-auto-fill-button,
+.input-base::-webkit-contacts-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
+}
 .input-base:-webkit-autofill,
 .input-base:-webkit-autofill:hover,
 .input-base:-webkit-autofill:focus {
@@ -362,6 +368,15 @@ body {
 .input-base:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px hsl(38 92% 54% / 0.15);
+}
+
+.dashboard-donut-chart .recharts-pie:focus,
+.dashboard-donut-chart .recharts-pie:focus-visible,
+.dashboard-donut-chart .recharts-pie-sector:focus,
+.dashboard-donut-chart .recharts-pie-sector:focus-visible,
+.dashboard-donut-chart .recharts-sector:focus,
+.dashboard-donut-chart .recharts-sector:focus-visible {
+  outline: none;
 }
 
 /* ─── Badge variants ─────────────────────────────────────────── */

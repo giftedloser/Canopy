@@ -532,6 +532,14 @@ function QuickUnlockCard() {
           onChange={(e) => setSam(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
           placeholder="SAM Account Name"
+          autoComplete="off"
+          name="quick-unlock-sam"
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="none"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-form-type="other"
           className="input-base flex-1 font-mono"
         />
         <button
@@ -580,6 +588,14 @@ function QuickResetPasswordCard() {
           value={sam}
           onChange={(e) => setSam(e.target.value)}
           placeholder="Username"
+          autoComplete="off"
+          name="quick-reset-username"
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="none"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-form-type="other"
           className="input-base flex-1 font-mono"
         />
         <input
@@ -588,6 +604,14 @@ function QuickResetPasswordCard() {
           onChange={(e) => setNewPw(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleReset()}
           placeholder="New password"
+          autoComplete="new-password"
+          name="quick-reset-password"
+          spellCheck={false}
+          autoCorrect="off"
+          autoCapitalize="none"
+          data-lpignore="true"
+          data-1p-ignore="true"
+          data-form-type="other"
           className="input-base flex-1"
         />
         <button

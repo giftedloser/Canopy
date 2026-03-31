@@ -121,6 +121,14 @@ export default function ComputersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search name or description..."
+            autoComplete="off"
+            name="computers-search"
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="none"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-form-type="other"
             className="input-base w-full pl-9"
           />
         </div>
