@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.1] - 2026-03-31
+
+### Changed
+- Added a frameless custom Tauri title bar with integrated minimize, maximize, close, drag, and double-click maximize behavior
+- Improved input-field behavior across credential, settings, search, and password flows to prevent overlapping placeholder and autofill text
+- Polished the dashboard donut chart to remove the stray focus outline and active-sector hover artifact
+
+### Fixed
+- Hardened the custom window shell capability configuration so the title bar controls and drag behavior work reliably in packaged builds
+
 ## [0.1.0] - 2026-03-30
 
 ### Added

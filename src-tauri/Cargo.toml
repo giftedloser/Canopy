@@ -1,6 +1,6 @@
 [package]
 name = "fuzzy-forest"
-version = "0.1.0"
+version = "0.1.1"
 description = "Windows-native Active Directory management desktop app built with Tauri, React, and Rust."
 authors = ["Fuzzy Forest contributors"]
 edition = "2021"
