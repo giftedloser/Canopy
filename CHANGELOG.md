@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.2] - 2026-04-01
+
+### Added
+- Standardized right-click context actions for users, computers, and groups
+- Shared action dialogs for moving AD objects between OUs and adding users to groups
+- Backend move operations for user and computer objects
+
+### Changed
+- Group member actions now route through a more consistent context-driven flow
+
+### Fixed
+- Dashboard user-status donut tooltip now layers above the center total overlay
+- User, computer, and group actions now refresh the relevant cached views after changes
+
 ## [0.1.1] - 2026-03-31
 
 ### Changed

@@ -1,6 +1,6 @@
 {
   "productName": "Fuzzy Forest",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "identifier": "com.fuzzy-forest.app",
   "build": {
     "frontendDist": "../dist",
