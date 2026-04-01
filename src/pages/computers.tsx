@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn, formatDate, getOUFromDN, exportToCSV } from "@/lib/utils";
 import { useCredentialStore } from "@/stores/credential-store";
-import { useComputers, useComputerDetail, useToggleComputer } from "@/hooks/use-ad-computers";
+import { useComputers, useComputerDetail, useToggleComputer, useMoveComputer } from "@/hooks/use-ad-computers";
 import { useResizablePercentColumns } from "@/hooks/use-resizable-columns";
 import { PaginationBar } from "@/components/shared/pagination-bar";
 import { isElevationCancelledError } from "@/lib/tauri-ad";
+import { MoveToOuDialog } from "@/components/shared/object-action-dialogs";
 import { toast } from "sonner";
 import {
   Search,
@@ -28,6 +29,8 @@ import {
   User,
   HardDrive,
   Calendar,
+  MoreHorizontal,
+  FolderTree,
 } from "lucide-react";
 
 type SortKey = "Name" | "Description" | "OperatingSystem" | "LastLogonDate" | "IPv4Address" | "Enabled";
@@ -44,6 +47,10 @@ export default function ComputersPage() {
   const [sortDir, setSortDir]                 = useState<"asc" | "desc">("asc");
   const [page, setPage]                       = useState(1);
   const [pageSize, setPageSize]               = useState(100);
+  const [contextMenu, setContextMenu]         = useState<{
+    x: number; y: number; name: string; enabled: boolean; dn?: string | null;
+  } | null>(null);
+  const [moveComputerState, setMoveComputerState] = useState<{ name: string; dn?: string | null } | null>(null);
 
   const { data, isLoading, isFetching, error } = useComputers({
     search: debouncedSearch || undefined,
@@ -53,6 +60,7 @@ export default function ComputersPage() {
     sortDir,
   });
   const toggle = useToggleComputer();
+  const moveComputer = useMoveComputer();
   const {
     tableRef: computersTableRef,
     widths: computerColumnWidths,
@@ -162,6 +170,7 @@ export default function ComputersPage() {
               <col style={{ width: `${computerColumnWidths[3]}%` }} />
               <col style={{ width: `${computerColumnWidths[4]}%` }} />
               <col style={{ width: `${computerColumnWidths[5]}%` }} />
+              <col style={{ width: "44px" }} />
             </colgroup>
             <thead className="sticky top-0 z-10">
               <tr className="bg-secondary/40 backdrop-blur-sm border-b border-border">
@@ -208,6 +217,7 @@ export default function ComputersPage() {
                     )}
                   </th>
                 ))}
+                <th className="w-11 px-0" />
               </tr>
             </thead>
             <tbody>
@@ -219,6 +229,16 @@ export default function ComputersPage() {
                   <tr
                     key={comp.Name || i}
                     onClick={() => setSelectedComputer(comp.Name)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setContextMenu({
+                        x: e.clientX,
+                        y: e.clientY,
+                        name: comp.Name,
+                        enabled: comp.Enabled,
+                        dn: comp.DistinguishedName,
+                      });
+                    }}
                     className={cn(
                       "table-row-hover border-b border-border/40 hover:bg-secondary/25 cursor-pointer",
                       shouldAnimateRows && "table-row-animate"
@@ -264,6 +284,23 @@ export default function ComputersPage() {
                         {comp.Enabled ? "Active" : "Disabled"}
                       </span>
                     </td>
+                    <td className="px-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            name: comp.Name,
+                            enabled: comp.Enabled,
+                            dn: comp.DistinguishedName,
+                          });
+                        }}
+                        className="p-1 rounded text-muted-foreground/30 hover:text-muted-foreground hover:bg-secondary transition-colors"
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -285,6 +322,65 @@ export default function ComputersPage() {
 
       {selectedComputer && (
         <ComputerDetailSheet name={selectedComputer} onClose={() => setSelectedComputer(null)} />
+      )}
+      {contextMenu && (
+        <>
+          <div className="fixed inset-0 z-50" onClick={() => setContextMenu(null)} />
+          <div
+            className="fixed z-50 bg-popover border border-border rounded-lg shadow-2xl p-1 min-w-[170px] animate-[scale-in_0.12s_ease-out]"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <ContextItem
+              icon={Monitor}
+              label="View Details"
+              onClick={() => {
+                setSelectedComputer(contextMenu.name);
+                setContextMenu(null);
+              }}
+            />
+            <ContextItem
+              icon={Power}
+              label={contextMenu.enabled ? "Disable Computer" : "Enable Computer"}
+              destructive={contextMenu.enabled}
+              onClick={async () => {
+                try {
+                  await toggle.mutateAsync({ name: contextMenu.name, enable: !contextMenu.enabled });
+                  toast.success(contextMenu.enabled ? "Computer disabled" : "Computer enabled");
+                } catch (e: any) {
+                  if (isElevationCancelledError(e)) { toast.message("Update cancelled."); return; }
+                  toast.error(e?.toString() || "Failed to update computer");
+                }
+                setContextMenu(null);
+              }}
+            />
+            <ContextItem
+              icon={FolderTree}
+              label="Move"
+              onClick={() => {
+                setMoveComputerState({ name: contextMenu.name, dn: contextMenu.dn });
+                setContextMenu(null);
+              }}
+            />
+          </div>
+        </>
+      )}
+      {moveComputerState && (
+        <MoveToOuDialog
+          objectLabel={moveComputerState.name}
+          currentDn={moveComputerState.dn}
+          loading={moveComputer.isPending}
+          onClose={() => setMoveComputerState(null)}
+          onConfirm={async (targetOu) => {
+            try {
+              await moveComputer.mutateAsync({ name: moveComputerState.name, targetOu });
+              toast.success("Computer moved successfully");
+              setMoveComputerState(null);
+            } catch (e: any) {
+              if (isElevationCancelledError(e)) { toast.message("Update cancelled."); return; }
+              toast.error(e?.toString() || "Failed to move computer");
+            }
+          }}
+        />
       )}
     </div>
   );
@@ -445,6 +541,22 @@ function ComputerDetailSheet({ name, onClose }: { name: string; onClose: () => v
         </div>
       </div>
     </>
+  );
+}
+
+function ContextItem({ icon: Icon, label, onClick, destructive = false }: {
+  icon: any; label: string; onClick: () => void; destructive?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-[12px] transition-colors",
+        destructive ? "text-destructive hover:bg-destructive/10" : "text-foreground hover:bg-secondary"
+      )}
+    >
+      <Icon className="w-3.5 h-3.5" /> {label}
+    </button>
   );
 }
 

@@ -19,10 +19,12 @@ pub fn run() {
             commands::users::toggle_user,
             commands::users::create_user,
             commands::users::update_user,
+            commands::users::move_user,
             // Computers
             commands::computers::get_computers,
             commands::computers::get_computer_detail,
             commands::computers::toggle_computer,
+            commands::computers::move_computer,
             // Groups
             commands::groups::get_groups,
             commands::groups::get_group_members,

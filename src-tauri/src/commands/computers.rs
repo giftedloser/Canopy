@@ -234,3 +234,29 @@ pub async fn toggle_computer(
 
     executor::execute_ad_script(&creds, &script)
 }
+
+#[tauri::command]
+pub async fn move_computer(
+    domain: String,
+    username: String,
+    password: String,
+    server: String,
+    computer_name: String,
+    target_ou: String,
+) -> Result<String, String> {
+    let creds = AdCredentials { domain, username, password };
+    let safe_name = sanitizer::sanitize_sam(&computer_name)?;
+    let safe_target = sanitizer::sanitize_dn(&target_ou)?;
+    let srv = sanitizer::sanitize_ps_string(server.trim())?;
+
+    let script = format!(
+        r#"$computer = Get-ADComputer -Identity '{name}' -Server '{server}' -Properties DistinguishedName
+Move-ADObject -Identity $computer.DistinguishedName -TargetPath '{target}' -Server '{server}' -Credential $cred
+@{{ success = $true; message = 'Computer moved successfully' }} | ConvertTo-Json"#,
+        name = safe_name,
+        target = safe_target,
+        server = srv,
+    );
+
+    executor::execute_ad_script(&creds, &script)
+}

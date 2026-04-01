@@ -3,11 +3,20 @@ import { useSearchParams } from "react-router-dom";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn, formatDate, getOUFromDN, exportToCSV } from "@/lib/utils";
 import { useCredentialStore } from "@/stores/credential-store";
-import { useUsers, useUnlockUser, useToggleUser, useCreateUser } from "@/hooks/use-ad-users";
+import {
+  useUsers,
+  useUnlockUser,
+  useToggleUser,
+  useCreateUser,
+  useResetPassword,
+  useAddUserToGroup,
+  useMoveUser,
+} from "@/hooks/use-ad-users";
 import { useResizablePercentColumns } from "@/hooks/use-resizable-columns";
 import { PaginationBar } from "@/components/shared/pagination-bar";
 import { isElevationCancelledError } from "@/lib/tauri-ad";
 import { UserDetailSheet } from "@/components/users/user-detail-sheet";
+import { GroupPickerDialog, MoveToOuDialog } from "@/components/shared/object-action-dialogs";
 import { toast } from "sonner";
 import {
   Search,
@@ -24,6 +33,8 @@ import {
   WifiOff,
   Filter,
   AlertTriangle,
+  KeyRound,
+  FolderTree,
 } from "lucide-react";
 
 type SortKey = "Name" | "SamAccountName" | "Description" | "Department" | "Enabled" | "LastLogonDate";
@@ -51,8 +62,11 @@ export default function UsersPage() {
   const [pageSize, setPageSize]               = useState(100);
   const [showCreate, setShowCreate]           = useState(false);
   const [contextMenu, setContextMenu]         = useState<{
-    x: number; y: number; sam: string; enabled: boolean; locked: boolean;
+    x: number; y: number; sam: string; enabled: boolean; locked: boolean; dn?: string | null;
   } | null>(null);
+  const [resetPasswordSam, setResetPasswordSam] = useState<string | null>(null);
+  const [addToGroupSam, setAddToGroupSam] = useState<string | null>(null);
+  const [moveUserState, setMoveUserState] = useState<{ sam: string; dn?: string | null } | null>(null);
 
   const { data, isLoading, isFetching, error } = useUsers({
     search: debouncedSearch || undefined,
@@ -64,6 +78,9 @@ export default function UsersPage() {
   });
   const unlock = useUnlockUser();
   const toggle = useToggleUser();
+  const resetPassword = useResetPassword();
+  const addToGroup = useAddUserToGroup();
+  const moveUser = useMoveUser();
   const {
     tableRef: usersTableRef,
     widths: userColumnWidths,
@@ -262,7 +279,14 @@ export default function UsersPage() {
                   onClick={() => setSelectedSam(user.SamAccountName)}
                   onContextMenu={(e) => {
                     e.preventDefault();
-                    setContextMenu({ x: e.clientX, y: e.clientY, sam: user.SamAccountName, enabled: user.Enabled, locked: user.LockedOut });
+                    setContextMenu({
+                      x: e.clientX,
+                      y: e.clientY,
+                      sam: user.SamAccountName,
+                      enabled: user.Enabled,
+                      locked: user.LockedOut,
+                      dn: user.DistinguishedName,
+                    });
                   }}
                   className={cn(
                     "table-row-hover border-b border-border/40 hover:bg-secondary/25 cursor-pointer",
@@ -308,7 +332,14 @@ export default function UsersPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setContextMenu({ x: e.clientX, y: e.clientY, sam: user.SamAccountName, enabled: user.Enabled, locked: user.LockedOut });
+                        setContextMenu({
+                          x: e.clientX,
+                          y: e.clientY,
+                          sam: user.SamAccountName,
+                          enabled: user.Enabled,
+                          locked: user.LockedOut,
+                          dn: user.DistinguishedName,
+                        });
                       }}
                       className="p-1 rounded text-muted-foreground/30 hover:text-muted-foreground hover:bg-secondary transition-colors"
                     >
@@ -342,6 +373,14 @@ export default function UsersPage() {
             style={{ left: contextMenu.x, top: contextMenu.y }}
           >
             <ContextItem icon={UsersIcon} label="View Details" onClick={() => { setSelectedSam(contextMenu.sam); setContextMenu(null); }} />
+            <ContextItem
+              icon={KeyRound}
+              label="Reset Password"
+              onClick={() => {
+                setResetPasswordSam(contextMenu.sam);
+                setContextMenu(null);
+              }}
+            />
             {contextMenu.locked && (
               <ContextItem
                 icon={Unlock}
@@ -359,6 +398,14 @@ export default function UsersPage() {
               />
             )}
             <ContextItem
+              icon={UserPlus}
+              label="Add to Group"
+              onClick={() => {
+                setAddToGroupSam(contextMenu.sam);
+                setContextMenu(null);
+              }}
+            />
+            <ContextItem
               icon={Power}
               label={contextMenu.enabled ? "Disable Account" : "Enable Account"}
               destructive={contextMenu.enabled}
@@ -373,12 +420,72 @@ export default function UsersPage() {
                 setContextMenu(null);
               }}
             />
+            <ContextItem
+              icon={FolderTree}
+              label="Move"
+              onClick={() => {
+                setMoveUserState({ sam: contextMenu.sam, dn: contextMenu.dn });
+                setContextMenu(null);
+              }}
+            />
           </div>
         </>
       )}
 
       {selectedSam && <UserDetailSheet sam={selectedSam} onClose={() => setSelectedSam(null)} />}
       {showCreate   && <CreateUserDialog onClose={() => setShowCreate(false)} />}
+      {resetPasswordSam && (
+        <ResetPasswordDialog
+          sam={resetPasswordSam}
+          loading={resetPassword.isPending}
+          onClose={() => setResetPasswordSam(null)}
+          onConfirm={async (newPassword) => {
+            try {
+              await resetPassword.mutateAsync({ samAccountName: resetPasswordSam, newPassword });
+              toast.success("Password reset successfully.");
+              setResetPasswordSam(null);
+            } catch (e: any) {
+              if (isElevationCancelledError(e)) { toast.message("Cancelled."); return; }
+              toast.error(e?.toString() || "Failed to reset password");
+            }
+          }}
+        />
+      )}
+      {addToGroupSam && (
+        <GroupPickerDialog
+          memberSam={addToGroupSam}
+          loading={addToGroup.isPending}
+          onClose={() => setAddToGroupSam(null)}
+          onConfirm={async (groupName) => {
+            try {
+              await addToGroup.mutateAsync({ sam: addToGroupSam, groupName });
+              toast.success(`Added ${addToGroupSam} to ${groupName}`);
+              setAddToGroupSam(null);
+            } catch (e: any) {
+              if (isElevationCancelledError(e)) { toast.message("Cancelled."); return; }
+              toast.error(e?.toString() || "Failed to add to group");
+            }
+          }}
+        />
+      )}
+      {moveUserState && (
+        <MoveToOuDialog
+          objectLabel={moveUserState.sam}
+          currentDn={moveUserState.dn}
+          loading={moveUser.isPending}
+          onClose={() => setMoveUserState(null)}
+          onConfirm={async (targetOu) => {
+            try {
+              await moveUser.mutateAsync({ sam: moveUserState.sam, targetOu });
+              toast.success("User moved successfully");
+              setMoveUserState(null);
+            } catch (e: any) {
+              if (isElevationCancelledError(e)) { toast.message("Cancelled."); return; }
+              toast.error(e?.toString() || "Failed to move user");
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -444,6 +551,70 @@ function ContextItem({ icon: Icon, label, onClick, destructive = false }: {
     >
       <Icon className="w-3.5 h-3.5" /> {label}
     </button>
+  );
+}
+
+function ResetPasswordDialog({
+  sam,
+  loading,
+  onClose,
+  onConfirm,
+}: {
+  sam: string;
+  loading?: boolean;
+  onClose: () => void;
+  onConfirm: (newPassword: string) => Promise<void> | void;
+}) {
+  const [newPassword, setNewPassword] = useState("");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-[420px] mx-4 bg-card border border-border rounded-xl shadow-2xl animate-[scale-in_0.18s_cubic-bezier(0.16,1,0.3,1)]">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <div>
+            <h2 className="text-[14px] font-bold">Reset Password</h2>
+            <p className="text-[11px] text-muted-foreground mt-1">{sam}</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+            <span className="text-lg leading-none">&times;</span>
+          </button>
+        </div>
+        <div className="px-5 py-4 space-y-3">
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted-foreground/60">New Password</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Enter new password"
+              autoComplete="new-password"
+              name="users-context-reset-password"
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="none"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-form-type="other"
+              className="input-base w-full"
+              autoFocus
+            />
+          </div>
+        </div>
+        <div className="px-5 py-3.5 border-t border-border flex justify-end gap-2">
+          <button onClick={onClose} className="h-8 px-4 rounded-md text-[12px] font-medium text-muted-foreground hover:bg-secondary transition-colors">
+            Cancel
+          </button>
+          <button
+            onClick={() => newPassword && onConfirm(newPassword)}
+            disabled={loading || !newPassword}
+            className="h-8 px-4 rounded-md bg-primary text-primary-foreground text-[12px] font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
+          >
+            {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Set Password"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

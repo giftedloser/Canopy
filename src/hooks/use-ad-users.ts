@@ -195,3 +195,31 @@ export function useCreateUser() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["users-snapshot"] }),
   });
 }
+
+export function useAddUserToGroup() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { sam: string; groupName: string }) =>
+      ad.addGroupMember(params.groupName, params.sam),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users-snapshot"] });
+      qc.invalidateQueries({ queryKey: ["user-detail"] });
+      qc.invalidateQueries({ queryKey: ["groups"] });
+      qc.invalidateQueries({ queryKey: ["group-members"] });
+    },
+  });
+}
+
+export function useMoveUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { sam: string; targetOu: string }) =>
+      ad.moveUser(params.sam, params.targetOu),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users-snapshot"] });
+      qc.invalidateQueries({ queryKey: ["user-detail"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      qc.invalidateQueries({ queryKey: ["ou-contents"] });
+    },
+  });
+}

@@ -12,6 +12,7 @@ interface UseGroupsParams {
   pageSize?: number;
   sortBy: string;
   sortDir: "asc" | "desc";
+  includeMemberCounts?: boolean;
 }
 
 export function useGroups({
@@ -20,6 +21,7 @@ export function useGroups({
   pageSize = DEFAULT_PAGE_SIZE,
   sortBy,
   sortDir,
+  includeMemberCounts = true,
 }: UseGroupsParams) {
   const isConnected = useCredentialStore((s) => s.isConnected);
   const scopeActive = useOuScopeStore((s) => s.scopeActive);
@@ -38,10 +40,38 @@ export function useGroups({
         pageSize,
         sortBy,
         sortDir,
+        includeMemberCounts,
       });
       return normalizePagedResult<CsvRow>(parseAdJson(raw), pageSize);
     },
     enabled: isConnected,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
+export function useGroupLookup(search: string, enabled = true) {
+  const isConnected = useCredentialStore((s) => s.isConnected);
+  const scopeActive = useOuScopeStore((s) => s.scopeActive);
+  const enabledOus = useOuScopeStore((s) => s.enabledOus);
+  const ouScopes = scopeActive && enabledOus.size > 0
+    ? Array.from(enabledOus).sort((a, b) => a.localeCompare(b))
+    : undefined;
+
+  return useQuery({
+    queryKey: ["groups-lookup", search ?? null, ouScopes ?? null],
+    queryFn: async () => {
+      const raw = await ad.getGroupsPage({
+        search,
+        ouScopes,
+        page: 1,
+        pageSize: 20,
+        sortBy: "Name",
+        sortDir: "asc",
+        includeMemberCounts: false,
+      });
+      return normalizePagedResult<CsvRow>(parseAdJson(raw), 20).items;
+    },
+    enabled: isConnected && enabled && search.trim().length >= 2,
     placeholderData: (previousData) => previousData,
   });
 }

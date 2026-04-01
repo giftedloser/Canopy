@@ -257,6 +257,14 @@ export async function updateUser(
   );
 }
 
+export async function moveUser(samAccountName: string, targetOu: string) {
+  return invokeWriteWithElevation<string>(
+    "move_user",
+    `Move user ${samAccountName}`,
+    { samAccountName, targetOu }
+  );
+}
+
 // Computers (read)
 export async function getComputers(search?: string, ouScopes?: string[]) {
   return invokeRead<string>("get_computers", { search, ouScopes, ou_scopes: ouScopes });
@@ -300,6 +308,14 @@ export async function toggleComputer(computerName: string, enable: boolean) {
     "toggle_computer",
     `${enable ? "Enable" : "Disable"} computer ${computerName}`,
     { computerName, enable }
+  );
+}
+
+export async function moveComputer(computerName: string, targetOu: string) {
+  return invokeWriteWithElevation<string>(
+    "move_computer",
+    `Move computer ${computerName}`,
+    { computerName, targetOu }
   );
 }
 

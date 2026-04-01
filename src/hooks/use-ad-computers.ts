@@ -144,3 +144,18 @@ export function useToggleComputer() {
     },
   });
 }
+
+export function useMoveComputer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (params: { name: string; targetOu: string }) =>
+      ad.moveComputer(params.name, params.targetOu),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["computers-snapshot"] });
+      qc.invalidateQueries({ queryKey: ["computer-detail"] });
+      qc.invalidateQueries({ queryKey: ["computer-os-breakdown"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      qc.invalidateQueries({ queryKey: ["ou-contents"] });
+    },
+  });
+}

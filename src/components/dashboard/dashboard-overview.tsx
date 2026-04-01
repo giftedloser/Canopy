@@ -23,6 +23,11 @@ const chartTooltipLabelStyle: React.CSSProperties = {
   color: "var(--color-muted-foreground)",
 };
 
+const chartTooltipWrapperStyle: React.CSSProperties = {
+  zIndex: 20,
+  pointerEvents: "none",
+};
+
 const DONUT_COLORS = [
   "var(--color-success)",
   "hsl(218 20% 55%)",
@@ -114,10 +119,11 @@ function UserStatusChart({ stats }: { stats: any }) {
                 contentStyle={chartTooltipStyle}
                 itemStyle={chartTooltipItemStyle}
                 labelStyle={chartTooltipLabelStyle}
+                wrapperStyle={chartTooltipWrapperStyle}
               />
             </PieChart>
           </ResponsiveContainer>
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 z-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-[28px] font-bold font-mono leading-none">{total.toLocaleString()}</span>
             <span className="text-[9px] text-muted-foreground uppercase tracking-wider mt-0.5">total</span>
           </div>

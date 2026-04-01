@@ -20,6 +20,7 @@ import {
   Users,
   WifiOff,
   AlertTriangle,
+  MoreHorizontal,
 } from "lucide-react";
 
 type SortKey = "Name" | "GroupCategory" | "GroupScope" | "MemberCount" | "Description";
@@ -28,12 +29,13 @@ export default function GroupsPage() {
   const isConnected = useCredentialStore((s) => s.isConnected);
   const [search, setSearch]                   = useState("");
   const debouncedSearch = useDebouncedValue(search);
-  const [selectedGroup, setSelectedGroup]     = useState<string | null>(null);
+  const [selectedGroup, setSelectedGroup]     = useState<{ name: string; intent?: "view" | "add" | "remove" } | null>(null);
   const [showCreate, setShowCreate]           = useState(false);
   const [sortKey, setSortKey]                 = useState<SortKey>("Name");
   const [sortDir, setSortDir]                 = useState<"asc" | "desc">("asc");
   const [page, setPage]                       = useState(1);
   const [pageSize, setPageSize]               = useState(100);
+  const [contextMenu, setContextMenu]         = useState<{ x: number; y: number; name: string } | null>(null);
 
   const { data, isLoading, isFetching, error } = useGroups({
     search: debouncedSearch || undefined,
@@ -150,6 +152,7 @@ export default function GroupsPage() {
               <col style={{ width: "14%" }} />
               <col style={{ width: "10%" }} />
               <col style={{ width: "28%" }} />
+              <col style={{ width: "44px" }} />
             </colgroup>
             <thead className="sticky top-0 z-10">
               <tr className="bg-secondary/40 backdrop-blur-sm border-b border-border">
@@ -175,13 +178,18 @@ export default function GroupsPage() {
                     </span>
                   </th>
                 ))}
+                <th className="w-11 px-0" />
               </tr>
             </thead>
             <tbody>
               {groups.map((group: any, i: number) => (
                 <tr
                   key={group.SamAccountName || i}
-                  onClick={() => setSelectedGroup(group.Name)}
+                  onClick={() => setSelectedGroup({ name: group.Name, intent: "view" })}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setContextMenu({ x: e.clientX, y: e.clientY, name: group.Name });
+                  }}
                   className={cn(
                     "table-row-hover border-b border-border/40 hover:bg-secondary/25 cursor-pointer",
                     shouldAnimateRows && "table-row-animate"
@@ -220,6 +228,17 @@ export default function GroupsPage() {
                   <td className="px-4">
                     <span className="text-[12px] text-muted-foreground truncate block max-w-xs">{group.Description || "—"}</span>
                   </td>
+                  <td className="px-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setContextMenu({ x: e.clientX, y: e.clientY, name: group.Name });
+                      }}
+                      className="p-1 rounded text-muted-foreground/30 hover:text-muted-foreground hover:bg-secondary transition-colors"
+                    >
+                      <MoreHorizontal className="w-4 h-4" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -238,14 +257,62 @@ export default function GroupsPage() {
         itemLabel="groups"
       />
 
-      {selectedGroup && <GroupDetailSheet name={selectedGroup} onClose={() => setSelectedGroup(null)} />}
+      {selectedGroup && (
+        <GroupDetailSheet
+          name={selectedGroup.name}
+          initialIntent={selectedGroup.intent}
+          onClose={() => setSelectedGroup(null)}
+        />
+      )}
       {showCreate    && <CreateGroupDialog onClose={() => setShowCreate(false)} />}
+      {contextMenu && (
+        <>
+          <div className="fixed inset-0 z-50" onClick={() => setContextMenu(null)} />
+          <div
+            className="fixed z-50 bg-popover border border-border rounded-lg shadow-2xl p-1 min-w-[170px] animate-[scale-in_0.12s_ease-out]"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <ContextItem
+              icon={Users}
+              label="View Members"
+              onClick={() => {
+                setSelectedGroup({ name: contextMenu.name, intent: "view" });
+                setContextMenu(null);
+              }}
+            />
+            <ContextItem
+              icon={UserPlus}
+              label="Add Member"
+              onClick={() => {
+                setSelectedGroup({ name: contextMenu.name, intent: "add" });
+                setContextMenu(null);
+              }}
+            />
+            <ContextItem
+              icon={UserMinus}
+              label="Remove Member"
+              onClick={() => {
+                setSelectedGroup({ name: contextMenu.name, intent: "remove" });
+                setContextMenu(null);
+              }}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }
 
 /* ─── Group detail sheet ─────────────────────────────────────── */
-function GroupDetailSheet({ name, onClose }: { name: string; onClose: () => void }) {
+function GroupDetailSheet({
+  name,
+  initialIntent = "view",
+  onClose,
+}: {
+  name: string;
+  initialIntent?: "view" | "add" | "remove";
+  onClose: () => void;
+}) {
   const { data: members = [], isLoading } = useGroupMembers(name);
   const addMember    = useAddGroupMember();
   const removeMember = useRemoveGroupMember();
@@ -292,6 +359,7 @@ function GroupDetailSheet({ name, onClose }: { name: string; onClose: () => void
               onChange={(e) => setNewMemberSam(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
               placeholder="Add member by username..."
+              autoFocus={initialIntent === "add"}
               className="input-base w-full pl-9 font-mono"
             />
           </div>
@@ -306,6 +374,11 @@ function GroupDetailSheet({ name, onClose }: { name: string; onClose: () => void
 
         {/* Member list */}
         <div className="flex-1 overflow-auto p-3">
+          {initialIntent === "remove" && (
+            <div className="mb-3 rounded-lg border border-warning/20 bg-warning/5 px-3 py-2 text-[11px] text-muted-foreground">
+              Remove members using the control at the end of each member row.
+            </div>
+          )}
           {isLoading ? (
             <div className="flex items-center justify-center h-40">
               <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
@@ -358,6 +431,22 @@ function GroupDetailSheet({ name, onClose }: { name: string; onClose: () => void
         </div>
       </div>
     </>
+  );
+}
+
+function ContextItem({ icon: Icon, label, onClick, destructive = false }: {
+  icon: any; label: string; onClick: () => void; destructive?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-[12px] transition-colors",
+        destructive ? "text-destructive hover:bg-destructive/10" : "text-foreground hover:bg-secondary"
+      )}
+    >
+      <Icon className="w-3.5 h-3.5" /> {label}
+    </button>
   );
 }
 
