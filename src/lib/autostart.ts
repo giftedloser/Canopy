@@ -5,8 +5,8 @@ export async function isLaunchAtStartupEnabled(): Promise<boolean> {
     return false;
   }
 
-  const { isEnabled } = await import("@tauri-apps/plugin-autostart");
-  return isEnabled();
+  const { invoke } = await import("@tauri-apps/api/core");
+  return invoke<boolean>("is_launch_at_startup_enabled");
 }
 
 export async function enableLaunchAtStartup(): Promise<void> {
@@ -14,8 +14,8 @@ export async function enableLaunchAtStartup(): Promise<void> {
     return;
   }
 
-  const { enable } = await import("@tauri-apps/plugin-autostart");
-  await enable();
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("enable_launch_at_startup");
 }
 
 export async function disableLaunchAtStartup(): Promise<void> {
@@ -23,6 +23,6 @@ export async function disableLaunchAtStartup(): Promise<void> {
     return;
   }
 
-  const { disable } = await import("@tauri-apps/plugin-autostart");
-  await disable();
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("disable_launch_at_startup");
 }

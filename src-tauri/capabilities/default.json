@@ -8,7 +8,6 @@
     "core:window:allow-minimize",
     "core:window:allow-start-dragging",
     "core:window:allow-toggle-maximize",
-    "autostart:default",
     "shell:allow-open",
     "shell:allow-execute"
   ]

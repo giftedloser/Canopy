@@ -1,3 +1,4 @@
+pub mod autostart;
 pub mod connection;
 pub mod users;
 pub mod computers;

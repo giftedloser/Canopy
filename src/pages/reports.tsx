@@ -1,8 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { cn, exportToCSV } from "@/lib/utils";
+import { cn, exportToCSV, parseAdJsonArray } from "@/lib/utils";
 import { useCredentialStore } from "@/stores/credential-store";
+import { useOuScopeStore } from "@/stores/ou-scope-store";
 import { useReport } from "@/hooks/use-ad-reports";
+import { runReport } from "@/lib/tauri-ad";
+import { toast } from "sonner";
 import {
   FileBarChart,
   LockKeyhole,
@@ -21,6 +24,7 @@ import {
   WifiOff,
   ArrowLeft,
   AlertTriangle,
+  Check,
 } from "lucide-react";
 
 interface ReportDef {
@@ -31,6 +35,13 @@ interface ReportDef {
   icon: any;
   colorClass: string;
   borderClass: string;
+}
+
+interface ReportValidationResult {
+  id: string;
+  title: string;
+  resultCount: number;
+  error?: string;
 }
 
 const reportSections = [
@@ -243,7 +254,18 @@ const reports: ReportDef[] = [
 
 export default function ReportsPage() {
   const isConnected   = useCredentialStore((s) => s.isConnected);
+  const scopeActive = useOuScopeStore((s) => s.scopeActive);
+  const enabledOus = useOuScopeStore((s) => s.enabledOus);
   const [searchParams, setSearchParams] = useSearchParams();
+  const [isValidatingCatalog, setIsValidatingCatalog] = useState(false);
+  const [validationResults, setValidationResults] = useState<ReportValidationResult[] | null>(null);
+  const ouScopes = useMemo(
+    () =>
+      scopeActive && enabledOus.size > 0
+        ? Array.from(enabledOus).sort((a, b) => a.localeCompare(b))
+        : undefined,
+    [enabledOus, scopeActive]
+  );
   const reportsBySection = useMemo(
     () =>
       reportSections.map((section) => ({
@@ -256,6 +278,42 @@ export default function ReportsPage() {
     const reportId = searchParams.get("report");
     return reports.some((report) => report.id === reportId) ? reportId : null;
   }, [searchParams]);
+
+  const validateCatalog = async () => {
+    setIsValidatingCatalog(true);
+    setValidationResults(null);
+
+    const results: ReportValidationResult[] = [];
+
+    for (const report of reports) {
+      try {
+        const raw = await runReport(report.id, ouScopes);
+        const parsed = parseAdJsonArray(raw);
+        results.push({
+          id: report.id,
+          title: report.title,
+          resultCount: parsed.length,
+        });
+      } catch (error) {
+        results.push({
+          id: report.id,
+          title: report.title,
+          resultCount: 0,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    setValidationResults(results);
+    setIsValidatingCatalog(false);
+
+    const failures = results.filter((result) => result.error).length;
+    if (failures > 0) {
+      toast.error(`Validation found ${failures} report issue${failures === 1 ? "" : "s"}`);
+    } else {
+      toast.success(`Validated ${results.length} reports successfully`);
+    }
+  };
 
   if (!isConnected) {
     return (
@@ -274,12 +332,61 @@ export default function ReportsPage() {
   return (
     <div className="p-6 max-w-[1280px] mx-auto animate-[fade-in_0.35s_ease-out]">
       {/* Page header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight leading-none mb-2">Reports</h1>
-        <p className="text-[13px] text-muted-foreground">
-          Generate and export Active Directory audit reports
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight leading-none mb-2">Reports</h1>
+          <p className="text-[13px] text-muted-foreground">
+            Generate and export Active Directory audit reports
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={validateCatalog}
+          disabled={isValidatingCatalog}
+          className="inline-flex h-9 items-center gap-2 px-3 rounded-md border border-border text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary disabled:opacity-60 transition-colors shrink-0"
+        >
+          {isValidatingCatalog ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+          Validate Catalog
+        </button>
       </div>
+
+      {validationResults && (
+        <div className="mb-6 rounded-xl border border-border bg-card overflow-hidden">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border">
+            <div>
+              <p className="text-[13px] font-semibold">Report Validation</p>
+              <p className="text-[11px] text-muted-foreground">
+                Ran all reports against the current directory connection{ouScopes ? " with the active OU scope applied" : ""}.
+              </p>
+            </div>
+            <div className="text-[11px] font-mono text-muted-foreground bg-secondary px-2 py-1 rounded-md">
+              {validationResults.filter((result) => !result.error).length} ok / {validationResults.filter((result) => !!result.error).length} failed
+            </div>
+          </div>
+          <div className="divide-y divide-border/60">
+            {validationResults.map((result) => (
+              <div key={result.id} className="flex items-start justify-between gap-4 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="text-[12px] font-medium">{result.title}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {result.error ? result.error : `${result.resultCount} rows returned`}
+                  </p>
+                </div>
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-md px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] shrink-0",
+                    result.error
+                      ? "bg-destructive/10 text-destructive"
+                      : "bg-emerald-500/10 text-emerald-500"
+                  )}
+                >
+                  {result.error ? "Issue" : "OK"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-6">
         {reportsBySection.map((section) => (
