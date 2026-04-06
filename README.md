@@ -23,7 +23,7 @@ Users &nbsp;|&nbsp; Computers &nbsp;|&nbsp; Groups &nbsp;|&nbsp; OU Scoping
 
 ## What is Fuzzy Forest?
 
-Fuzzy Forest is a Windows-native desktop app for everyday Active Directory administration. It gives you one fast interface for browsing users, computers, groups, reports, and directory structure without bouncing between legacy consoles all day.
+Fuzzy Forest is a Windows-native desktop app for everyday Active Directory administration. It gives you one fast interface for browsing users, computers, groups, directory structure, and on-demand security or hygiene reports without bouncing between legacy consoles all day.
 
 Built with Tauri 2, React 19, TypeScript, and Rust. Windows only. Powered by integrated Windows authentication for reads and explicit elevation for writes.
 
@@ -47,7 +47,8 @@ Built with Tauri 2, React 19, TypeScript, and Rust. Windows only. Powered by int
 ### Stay Operational
 
 - Dashboard cards drill into the exact users, reports, groups, or computers behind the metric
-- Reports cover locked accounts, inactive users, expiring passwords, never-logged-in users, empty groups, large groups, and more
+- Reports are organized into security, identity, device, and group sections so larger catalogs stay easy to scan
+- Reports cover locked accounts, privileged accounts, stale privileged accounts, service accounts, delegation, SPN exposure, SIDHistory, old passwords, stale computers, outdated OS versions, empty groups, large groups, nesting depth, and more
 - Launch-at-startup support is built into Settings
 - Manual refresh is scoped so you can pull live directory state without reloading everything
 
