@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.3] - 2026-04-06
+
+### Added
+- Expanded the reports catalog with AD-native security, identity, device, and group hygiene reports
+- Added privileged account, service account, delegation, SPN, SIDHistory, adminCount, stale computer, outdated OS, and nesting-depth reporting
+
+### Changed
+- Organized the Reports page into light scan-friendly sections for security, identity, devices, and groups
+
+### Fixed
+- Tightened service-account output to include supported encryption details
+- Scoped stale privileged account reporting to enabled privileged users for cleaner signal
+
 ## [0.1.2] - 2026-04-01
 
 ### Added

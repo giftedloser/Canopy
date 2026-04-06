@@ -25,6 +25,7 @@ import {
 
 interface ReportDef {
   id: string;
+  category: "security" | "identity" | "devices" | "groups";
   title: string;
   description: string;
   icon: any;
@@ -32,9 +33,17 @@ interface ReportDef {
   borderClass: string;
 }
 
+const reportSections = [
+  { id: "security", title: "Security & Privilege" },
+  { id: "identity", title: "Identity Hygiene" },
+  { id: "devices", title: "Devices" },
+  { id: "groups", title: "Groups" },
+] as const;
+
 const reports: ReportDef[] = [
   {
     id: "locked_accounts",
+    category: "security",
     title: "Locked Accounts",
     description: "Users currently locked out of their accounts",
     icon: LockKeyhole,
@@ -43,6 +52,7 @@ const reports: ReportDef[] = [
   },
   {
     id: "disabled_accounts",
+    category: "identity",
     title: "Disabled Accounts",
     description: "User accounts that are currently disabled",
     icon: UserX,
@@ -51,6 +61,7 @@ const reports: ReportDef[] = [
   },
   {
     id: "inactive_users",
+    category: "identity",
     title: "Inactive Users (90+ days)",
     description: "Enabled accounts with no logon in 90 days",
     icon: Clock,
@@ -59,6 +70,7 @@ const reports: ReportDef[] = [
   },
   {
     id: "expiring_passwords",
+    category: "identity",
     title: "Expiring Passwords",
     description: "Passwords expiring within the next 7 days",
     icon: KeyRound,
@@ -67,6 +79,7 @@ const reports: ReportDef[] = [
   },
   {
     id: "never_logged_in",
+    category: "identity",
     title: "Never Logged In",
     description: "Enabled accounts that have never been used",
     icon: UserCheck,
@@ -75,6 +88,7 @@ const reports: ReportDef[] = [
   },
   {
     id: "no_email",
+    category: "identity",
     title: "Users Without Email",
     description: "Active users missing an email address",
     icon: Mail,
@@ -83,6 +97,7 @@ const reports: ReportDef[] = [
   },
   {
     id: "computer_os_breakdown",
+    category: "devices",
     title: "OS Breakdown",
     description: "Computer count grouped by operating system",
     icon: Monitor,
@@ -91,6 +106,7 @@ const reports: ReportDef[] = [
   },
   {
     id: "empty_groups",
+    category: "groups",
     title: "Empty Groups",
     description: "Groups with zero members",
     icon: Users,
@@ -99,6 +115,7 @@ const reports: ReportDef[] = [
   },
   {
     id: "large_groups",
+    category: "groups",
     title: "Large Groups (50+)",
     description: "Groups with 50 or more members",
     icon: ShieldAlert,
@@ -107,17 +124,134 @@ const reports: ReportDef[] = [
   },
   {
     id: "password_never_expires",
+    category: "identity",
     title: "Password Never Expires",
     description: "Active accounts with non-expiring passwords",
     icon: Shield,
     colorClass: "text-indigo-400 bg-indigo-500/10",
     borderClass: "border-l-indigo-500/40",
   },
+  {
+    id: "privileged_accounts",
+    category: "security",
+    title: "Privileged Accounts",
+    description: "Users in built-in and directory privileged groups",
+    icon: ShieldAlert,
+    colorClass: "text-rose-400 bg-rose-500/10",
+    borderClass: "border-l-rose-500/40",
+  },
+  {
+    id: "stale_privileged_accounts",
+    category: "security",
+    title: "Stale Privileged Accounts",
+    description: "Privileged users with no logon in 90+ days",
+    icon: Clock,
+    colorClass: "text-amber-400 bg-amber-500/10",
+    borderClass: "border-l-amber-500/40",
+  },
+  {
+    id: "service_accounts",
+    category: "identity",
+    title: "Service Accounts",
+    description: "SPN-backed or service-patterned user accounts",
+    icon: KeyRound,
+    colorClass: "text-orange-400 bg-orange-500/10",
+    borderClass: "border-l-orange-500/40",
+  },
+  {
+    id: "delegation_enabled",
+    category: "security",
+    title: "Delegation Enabled",
+    description: "Users or computers with unconstrained or constrained delegation",
+    icon: Shield,
+    colorClass: "text-fuchsia-400 bg-fuchsia-500/10",
+    borderClass: "border-l-fuchsia-500/40",
+  },
+  {
+    id: "spn_accounts",
+    category: "security",
+    title: "Accounts With SPNs",
+    description: "Kerberoastable user accounts with service principal names",
+    icon: KeyRound,
+    colorClass: "text-red-400 bg-red-500/10",
+    borderClass: "border-l-red-500/40",
+  },
+  {
+    id: "sidhistory_present",
+    category: "security",
+    title: "SIDHistory Present",
+    description: "Users, computers, or groups carrying SIDHistory values",
+    icon: ShieldAlert,
+    colorClass: "text-yellow-400 bg-yellow-500/10",
+    borderClass: "border-l-yellow-500/40",
+  },
+  {
+    id: "disabled_accounts_in_groups",
+    category: "identity",
+    title: "Disabled But In Groups",
+    description: "Disabled users still present in security groups",
+    icon: UserX,
+    colorClass: "text-slate-400 bg-slate-500/10",
+    borderClass: "border-l-slate-500/40",
+  },
+  {
+    id: "admincount_accounts",
+    category: "security",
+    title: "AdminCount = 1",
+    description: "Protected users, computers, or groups with adminCount set",
+    icon: Shield,
+    colorClass: "text-indigo-400 bg-indigo-500/10",
+    borderClass: "border-l-indigo-500/40",
+  },
+  {
+    id: "old_password_active_users",
+    category: "identity",
+    title: "Old Passwords, Still Active",
+    description: "Enabled users active recently with passwords older than 180 days",
+    icon: Clock,
+    colorClass: "text-amber-400 bg-amber-500/10",
+    borderClass: "border-l-amber-500/40",
+  },
+  {
+    id: "computers_not_reporting",
+    category: "devices",
+    title: "Computers Not Reporting",
+    description: "Enabled machines with no AD logon in 30+ days",
+    icon: Monitor,
+    colorClass: "text-cyan-400 bg-cyan-500/10",
+    borderClass: "border-l-cyan-500/40",
+  },
+  {
+    id: "outdated_operating_systems",
+    category: "devices",
+    title: "Outdated OS / Unsupported",
+    description: "Unsupported Windows versions and Windows 10 builds before 22H2",
+    icon: AlertTriangle,
+    colorClass: "text-orange-400 bg-orange-500/10",
+    borderClass: "border-l-orange-500/40",
+  },
+  {
+    id: "group_nesting_depth",
+    category: "groups",
+    title: "Group Nesting Depth",
+    description: "Nested groups ranked by depth and direct nested-group count",
+    icon: Users,
+    colorClass: "text-emerald-400 bg-emerald-500/10",
+    borderClass: "border-l-emerald-500/40",
+  },
 ];
 
 export default function ReportsPage() {
   const isConnected   = useCredentialStore((s) => s.isConnected);
   const [searchParams, setSearchParams] = useSearchParams();
+  const reportsBySection = useMemo(
+    () =>
+      reportSections.map((section) => ({
+        ...section,
+        reports: reports.filter((report) => report.category === section.id),
+      })),
+    []
+  );
   const activeReport = useMemo(() => {
     const reportId = searchParams.get("report");
     return reports.some((report) => report.id === reportId) ? reportId : null;
@@ -147,25 +281,37 @@ export default function ReportsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 card-stagger">
-        {reports.map((report) => (
-          <button
-            key={report.id}
-            onClick={() => setSearchParams({ report: report.id })}
-            className={cn(
-              "group text-left rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:bg-secondary/30 transition-all border-l-[3px]",
-              report.borderClass
-            )}
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className={cn("flex items-center justify-center w-9 h-9 rounded-lg", report.colorClass)}>
-                <report.icon className="w-4 h-4" />
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground/25 group-hover:text-primary group-hover:translate-x-0.5 transition-all mt-2" />
+      <div className="space-y-6">
+        {reportsBySection.map((section) => (
+          <section key={section.id}>
+            <div className="flex items-center gap-3 mb-3">
+              <h2 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                {section.title}
+              </h2>
+              <div className="h-px flex-1 bg-border" />
             </div>
-            <p className="text-[13px] font-semibold mb-1">{report.title}</p>
-            <p className="text-[11px] text-muted-foreground leading-relaxed">{report.description}</p>
-          </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 card-stagger">
+              {section.reports.map((report) => (
+                <button
+                  key={report.id}
+                  onClick={() => setSearchParams({ report: report.id })}
+                  className={cn(
+                    "group text-left rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:bg-secondary/30 transition-all border-l-[3px]",
+                    report.borderClass
+                  )}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={cn("flex items-center justify-center w-9 h-9 rounded-lg", report.colorClass)}>
+                      <report.icon className="w-4 h-4" />
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/25 group-hover:text-primary group-hover:translate-x-0.5 transition-all mt-2" />
+                  </div>
+                  <p className="text-[13px] font-semibold mb-1">{report.title}</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{report.description}</p>
+                </button>
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     </div>
