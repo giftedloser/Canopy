@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as ad from "@/lib/tauri-ad";
+import { QUERY_STALE_TIMES } from "@/lib/query-client";
 import { useCredentialStore } from "@/stores/credential-store";
 import { useOuScopeStore } from "@/stores/ou-scope-store";
 import { normalizePagedResult, parseAdJson, parseAdJsonArray, type CsvRow } from "@/lib/utils";
@@ -46,6 +47,7 @@ export function useGroups({
       return normalizePagedResult<CsvRow>(parseAdJson(raw), pageSize);
     },
     enabled: isConnected,
+    staleTime: QUERY_STALE_TIMES.default,
     placeholderData: (previousData) => previousData,
   });
 }
@@ -74,6 +76,7 @@ export function useGroupLookup(search: string, enabled = true) {
       return normalizePagedResult<CsvRow>(parseAdJson(raw), 20).items;
     },
     enabled: isConnected && enabled && !!normalizedSearch && normalizedSearch.length >= 2,
+    staleTime: QUERY_STALE_TIMES.default,
     placeholderData: (previousData) => previousData,
   });
 }
@@ -103,6 +106,7 @@ export function useGroupMemberCounts(groupDns: string[], enabled = true) {
       }, {});
     },
     enabled: isConnected && enabled && normalizedGroupDns.length > 0,
+    staleTime: QUERY_STALE_TIMES.detail,
     placeholderData: (previousData) => previousData,
   });
 }
@@ -117,6 +121,7 @@ export function useGroupMembers(groupName: string | null, options?: { enabled?: 
       return parseAdJsonArray(raw);
     },
     enabled: isConnected && !!groupName && options?.enabled !== false,
+    staleTime: QUERY_STALE_TIMES.detail,
   });
 }
 

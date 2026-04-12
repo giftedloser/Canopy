@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import * as ad from "@/lib/tauri-ad";
+import { QUERY_STALE_TIMES } from "@/lib/query-client";
 import { useCredentialStore } from "@/stores/credential-store";
 import { useOuScopeStore } from "@/stores/ou-scope-store";
 import { parseAdJson, parseAdJsonArray } from "@/lib/utils";
@@ -23,6 +24,7 @@ export function useComputerOsBreakdown() {
       }
     },
     enabled: isConnected,
+    staleTime: QUERY_STALE_TIMES.aggregate,
     placeholderData: (previousData) => previousData,
   });
 }
@@ -43,6 +45,7 @@ export function useReport(reportType: string | null) {
       return parseAdJsonArray(raw);
     },
     enabled: isConnected && !!reportType,
+    staleTime: QUERY_STALE_TIMES.reports,
   });
 }
 
@@ -61,6 +64,7 @@ export function useDashboardStats() {
       return parseAdJson(raw);
     },
     enabled: isConnected,
+    staleTime: QUERY_STALE_TIMES.aggregate,
     placeholderData: (previousData) => previousData,
   });
 }

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as ad from "@/lib/tauri-ad";
+import { QUERY_STALE_TIMES } from "@/lib/query-client";
 import { useCredentialStore } from "@/stores/credential-store";
 import { useOuScopeStore } from "@/stores/ou-scope-store";
 import { normalizePagedResult, parseAdJson, type CsvRow, type PagedResult } from "@/lib/utils";
@@ -54,6 +55,7 @@ export function useUsers({
       return normalizePagedResult<CsvRow>(parseAdJson(raw), pageSize);
     },
     enabled: isConnected,
+    staleTime: QUERY_STALE_TIMES.default,
     placeholderData: (previousData) => previousData,
   });
 }
@@ -68,6 +70,7 @@ export function useUserDetail(sam: string | null) {
       return parseAdJson(raw);
     },
     enabled: isConnected && !!sam,
+    staleTime: QUERY_STALE_TIMES.detail,
   });
 }
 

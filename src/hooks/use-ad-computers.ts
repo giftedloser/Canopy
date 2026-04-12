@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as ad from "@/lib/tauri-ad";
+import { QUERY_STALE_TIMES } from "@/lib/query-client";
 import { useCredentialStore } from "@/stores/credential-store";
 import { useOuScopeStore } from "@/stores/ou-scope-store";
 import { normalizePagedResult, parseAdJson, type CsvRow, type PagedResult } from "@/lib/utils";
@@ -43,6 +44,7 @@ export function useComputers({
       return normalizePagedResult<CsvRow>(parseAdJson(raw), pageSize);
     },
     enabled: isConnected,
+    staleTime: QUERY_STALE_TIMES.default,
     placeholderData: (previousData) => previousData,
   });
 }
@@ -57,6 +59,7 @@ export function useComputerDetail(name: string | null) {
       return parseAdJson(raw);
     },
     enabled: isConnected && !!name,
+    staleTime: QUERY_STALE_TIMES.detail,
   });
 }
 

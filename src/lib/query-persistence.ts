@@ -4,7 +4,18 @@ const STORAGE_KEY = "fuzzy-directory.query-cache.v1";
 const STORAGE_VERSION = 2;
 const MAX_SCOPE_BYTES = 3 * 1024 * 1024;
 const MAX_ENTRY_BYTES = 512 * 1024;
-const MAX_AGE_MS = 12 * 60 * 60 * 1000;
+const DEFAULT_MAX_AGE_MS = 30 * 60 * 1000;
+const PERSISTED_QUERY_TTLS_MS: Record<string, number> = {
+  "dashboard-stats": 2 * 60 * 60 * 1000,
+  "computer-os-breakdown": 2 * 60 * 60 * 1000,
+  report: 2 * 60 * 60 * 1000,
+  "users-snapshot": 30 * 60 * 1000,
+  "computers-snapshot": 30 * 60 * 1000,
+  groups: 30 * 60 * 1000,
+  "group-members": 15 * 60 * 1000,
+  "ou-tree": 6 * 60 * 60 * 1000,
+  "ou-contents": 30 * 60 * 1000,
+};
 
 const PERSISTED_QUERY_ROOTS = new Set([
   "dashboard-stats",
@@ -68,8 +79,9 @@ function getEndOfDay(now: number): number {
   return end.getTime();
 }
 
-function getExpiresAt(now: number): number {
-  return Math.min(now + MAX_AGE_MS, getEndOfDay(now));
+function getExpiresAt(queryRoot: string, now: number): number {
+  const ttl = PERSISTED_QUERY_TTLS_MS[queryRoot] ?? DEFAULT_MAX_AGE_MS;
+  return Math.min(now + ttl, getEndOfDay(now));
 }
 
 function serializeQueryKey(queryKey: QueryKey): string {
@@ -210,7 +222,7 @@ export function setupQueryPersistence(
           data: query.state.data,
           dataUpdatedAt: query.state.dataUpdatedAt || now,
           savedAt: now,
-          expiresAt: getExpiresAt(now),
+          expiresAt: getExpiresAt(root, now),
           sizeBytes,
         }];
       })

@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { useElevationStore } from "@/stores/elevation-store";
 import { useCredentialStore } from "@/stores/credential-store";
 
@@ -47,7 +48,6 @@ async function tauriInvoke<T>(
       "Not running inside Tauri. Launch with `npm run tauri dev` to connect to Active Directory."
     );
   }
-  const { invoke } = await import("@tauri-apps/api/core");
   try {
     return await invoke<T>(cmd, args);
   } catch (err) {
