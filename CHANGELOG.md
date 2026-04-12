@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.6] - 2026-04-12
+
+### Changed
+- Moved Users and Computers grids onto backend paging and sorting instead of full snapshot sorting in the frontend
+- Rebalanced query freshness and persisted cache lifetimes so directory data stays fast without remaining fresh indefinitely
+- Made report catalog validation run with capped concurrency for faster audit passes
+
+### Fixed
+- Reduced Groups page latency by avoiding exact member-count work during normal browsing and hydrating visible counts separately
+- Normalized query and cache-key handling across command search, groups lookup, and object grids
+- Cleaned up Tauri invoke imports so production builds no longer emit the mixed static/dynamic `@tauri-apps/api/core` warning
+
 ## [0.1.5] - 2026-04-12
 
 ### Changed
