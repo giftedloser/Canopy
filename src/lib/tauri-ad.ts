@@ -362,6 +362,13 @@ export async function getGroupMembers(groupName: string) {
   return invokeRead<string>("get_group_members", { groupName });
 }
 
+export async function getGroupMemberCounts(groupDns: string[]) {
+  return invokeRead<string>("get_group_member_counts", {
+    groupDns,
+    group_dns: groupDns,
+  });
+}
+
 // Groups (write)
 export async function addGroupMember(groupName: string, memberSam: string) {
   return invokeWriteWithElevation<string>(

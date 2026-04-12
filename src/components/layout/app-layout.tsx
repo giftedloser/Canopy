@@ -47,7 +47,7 @@ const routeRefreshKeys: Record<string, string[]> = {
   "/": ["dashboard-stats", "computer-os-breakdown", "group-members"],
   "/users": ["users-snapshot", "user-detail"],
   "/computers": ["computers-snapshot", "computer-detail"],
-  "/groups": ["groups", "group-members"],
+  "/groups": ["groups", "group-members", "group-member-counts"],
   "/reports": ["report"],
   "/directory": ["ou-tree", "ou-contents"],
   "/settings": [],
@@ -219,7 +219,7 @@ export function AppLayout() {
                       queryKeys.map((queryKey) =>
                         queryClient.refetchQueries({
                           queryKey: [queryKey],
-                          type: "active",
+                          type: "all",
                         })
                       )
                     );

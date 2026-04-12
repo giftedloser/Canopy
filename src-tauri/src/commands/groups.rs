@@ -1,5 +1,37 @@
 use crate::powershell::{executor::{self, AdCredentials}, sanitizer};
 
+fn build_exact_group_member_count_function(server_var: &str) -> String {
+    format!(
+        r#"function Get-ExactGroupMemberCount([string] $identity) {{
+    try {{
+        $count = 0
+        $start = 0
+        while ($true) {{
+            $rangeAttr = "member;range=$start-$($start + 1499)"
+            $rangeGroup = Get-ADGroup -Identity $identity -Server {server_var} -Properties $rangeAttr
+            $rangeProp = $rangeGroup.PSObject.Properties | Where-Object {{ $_.Name -like 'member;range=*' }} | Select-Object -First 1
+            if (-not $rangeProp) {{
+                return 0
+            }}
+
+            $rangeMembers = @($rangeProp.Value)
+            $count += $rangeMembers.Count
+
+            if ($rangeProp.Name -match '^member;range=\d+-\*$' -or $rangeMembers.Count -eq 0) {{
+                break
+            }}
+
+            $start += $rangeMembers.Count
+        }}
+
+        return $count
+    }} catch {{
+        return 0
+    }}
+}}"#
+    )
+}
+
 #[tauri::command]
 pub async fn get_groups(
     server: String,
@@ -55,33 +87,7 @@ pub async fn get_groups(
                 ou_parts.push(format!("'{}'", safe));
             }
             let script = format!(
-                r#"function Get-ExactGroupMemberCount([string] $identity) {{
-    try {{
-        $count = 0
-        $start = 0
-        while ($true) {{
-            $rangeAttr = "member;range=$start-$($start + 1499)"
-            $rangeGroup = Get-ADGroup -Identity $identity -Server '{server}' -Properties $rangeAttr
-            $rangeProp = $rangeGroup.PSObject.Properties | Where-Object {{ $_.Name -like 'member;range=*' }} | Select-Object -First 1
-            if (-not $rangeProp) {{
-                return 0
-            }}
-
-            $rangeMembers = @($rangeProp.Value)
-            $count += $rangeMembers.Count
-
-            if ($rangeProp.Name -match '^member;range=\d+-\*$' -or $rangeMembers.Count -eq 0) {{
-                break
-            }}
-
-            $start += $rangeMembers.Count
-        }}
-
-        return $count
-    }} catch {{
-        return 0
-    }}
-}}
+                r#"{count_helper}
 
 function Get-GroupSortValue([object] $group) {{
     switch ('{sort_prop}') {{
@@ -136,8 +142,9 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
     has_more = (({page} * {page_size}) -lt $total)
 }} | ConvertTo-Json -Depth 4"#,
                 ous = ou_parts.join(","),
-                filter = filter_expr,
+        filter = filter_expr,
                 server = srv,
+                count_helper = build_exact_group_member_count_function(&format!("'{}'", srv)),
                 base_props = base_props,
                 select = select,
                 sort_prop = sort_prop,
@@ -153,33 +160,7 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
     }
 
     let script = format!(
-        r#"function Get-ExactGroupMemberCount([string] $identity) {{
-    try {{
-        $count = 0
-        $start = 0
-        while ($true) {{
-            $rangeAttr = "member;range=$start-$($start + 1499)"
-            $rangeGroup = Get-ADGroup -Identity $identity -Server '{server}' -Properties $rangeAttr
-            $rangeProp = $rangeGroup.PSObject.Properties | Where-Object {{ $_.Name -like 'member;range=*' }} | Select-Object -First 1
-            if (-not $rangeProp) {{
-                return 0
-            }}
-
-            $rangeMembers = @($rangeProp.Value)
-            $count += $rangeMembers.Count
-
-            if ($rangeProp.Name -match '^member;range=\d+-\*$' -or $rangeMembers.Count -eq 0) {{
-                break
-            }}
-
-            $start += $rangeMembers.Count
-        }}
-
-        return $count
-    }} catch {{
-        return 0
-    }}
-}}
+        r#"{count_helper}
 
 function Get-GroupSortValue([object] $group) {{
     switch ('{sort_prop}') {{
@@ -227,6 +208,7 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
 }} | ConvertTo-Json -Depth 4"#,
         filter = filter_expr,
         server = srv,
+        count_helper = build_exact_group_member_count_function(&format!("'{}'", srv)),
         base_props = base_props,
         select = select,
         sort_prop = sort_prop,
@@ -236,6 +218,52 @@ $pageCount = if ($total -eq 0) {{ 0 }} else {{ [int][Math]::Ceiling($total / [do
         skip = skip,
         page = page,
         page_size = page_size,
+    );
+
+    executor::execute_ps_script(&script)
+}
+
+#[tauri::command]
+pub async fn get_group_member_counts(
+    server: String,
+    group_dns: Vec<String>,
+) -> Result<String, String> {
+    let server = server.trim().to_string();
+    if server.is_empty() {
+        return Err("Server is required".to_string());
+    }
+    if group_dns.is_empty() {
+        return Ok("[]".to_string());
+    }
+
+    let srv = sanitizer::sanitize_ps_string(&server)?;
+    let sanitized_dns = group_dns
+        .iter()
+        .map(|dn| sanitizer::sanitize_dn(dn))
+        .collect::<Result<Vec<_>, _>>()?;
+    let dn_values = sanitized_dns
+        .iter()
+        .map(|dn| format!("'{}'", dn))
+        .collect::<Vec<_>>()
+        .join(",");
+
+    let script = format!(
+        r#"{count_helper}
+
+$results = foreach ($groupDn in @({group_dns})) {{
+    if ([string]::IsNullOrWhiteSpace($groupDn)) {{
+        continue
+    }}
+
+    [PSCustomObject]@{{
+        DistinguishedName = $groupDn
+        MemberCount = Get-ExactGroupMemberCount $groupDn
+    }}
+}}
+
+$results | ConvertTo-Json -Depth 3"#,
+        count_helper = build_exact_group_member_count_function(&format!("'{}'", srv)),
+        group_dns = dn_values,
     );
 
     executor::execute_ps_script(&script)

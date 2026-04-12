@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as ad from "@/lib/tauri-ad";
 import { useCredentialStore } from "@/stores/credential-store";
@@ -15,57 +14,6 @@ interface UseComputersParams {
   sortDir: "asc" | "desc";
 }
 
-function getComputerSortString(value: unknown) {
-  return typeof value === "string" ? value.trim().toLocaleLowerCase() : "";
-}
-
-function getComputerDateValue(value: unknown) {
-  if (typeof value !== "string" || !value) return Number.NEGATIVE_INFINITY;
-  const psMatch = value.match(/^\/Date\((-?\d+)\)\/$/);
-  if (psMatch) {
-    return Number.parseInt(psMatch[1], 10);
-  }
-  const parsed = Date.parse(value);
-  return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
-}
-
-function sortComputersSnapshot(items: CsvRow[], sortBy: string, sortDir: "asc" | "desc") {
-  const direction = sortDir === "desc" ? -1 : 1;
-  const sorted = [...items];
-  sorted.sort((left, right) => {
-    let result = 0;
-
-    switch (sortBy) {
-      case "Description":
-        result = getComputerSortString(left.Description).localeCompare(getComputerSortString(right.Description), undefined, { numeric: true });
-        break;
-      case "OperatingSystem":
-        result = getComputerSortString(left.OperatingSystem).localeCompare(getComputerSortString(right.OperatingSystem), undefined, { numeric: true });
-        break;
-      case "LastLogonDate":
-        result = getComputerDateValue(left.LastLogonDate) - getComputerDateValue(right.LastLogonDate);
-        break;
-      case "IPv4Address":
-        result = getComputerSortString(left.IPv4Address).localeCompare(getComputerSortString(right.IPv4Address), undefined, { numeric: true });
-        break;
-      case "Enabled":
-        result = Number(Boolean(left.Enabled)) - Number(Boolean(right.Enabled));
-        break;
-      default:
-        result = getComputerSortString(left.Name).localeCompare(getComputerSortString(right.Name), undefined, { numeric: true });
-        break;
-    }
-
-    if (result !== 0) {
-      return result * direction;
-    }
-
-    return getComputerSortString(left.Name).localeCompare(getComputerSortString(right.Name), undefined, { numeric: true });
-  });
-
-  return sorted;
-}
-
 export function useComputers({
   search,
   page,
@@ -74,50 +22,29 @@ export function useComputers({
   sortDir,
 }: UseComputersParams) {
   const isConnected = useCredentialStore((s) => s.isConnected);
+  const normalizedSearch = search?.trim() || undefined;
   const scopeActive = useOuScopeStore((s) => s.scopeActive);
   const enabledOus = useOuScopeStore((s) => s.enabledOus);
   const ouScopes = scopeActive && enabledOus.size > 0
     ? Array.from(enabledOus).sort((a, b) => a.localeCompare(b))
     : undefined;
 
-  const snapshotQuery = useQuery({
-    queryKey: ["computers-snapshot", search ?? null, ouScopes ?? null],
+  return useQuery<PagedResult<CsvRow>>({
+    queryKey: ["computers-snapshot", normalizedSearch ?? null, page, pageSize, sortBy, sortDir, ouScopes ?? null],
     queryFn: async () => {
       const raw = await ad.getComputersPage({
-        search,
+        search: normalizedSearch,
         ouScopes,
-        fetchAll: true,
+        page,
+        pageSize,
+        sortBy,
+        sortDir,
       });
-      return normalizePagedResult<CsvRow>(parseAdJson(raw), DEFAULT_PAGE_SIZE).items;
+      return normalizePagedResult<CsvRow>(parseAdJson(raw), pageSize);
     },
     enabled: isConnected,
     placeholderData: (previousData) => previousData,
   });
-
-  const data = useMemo<PagedResult<CsvRow> | undefined>(() => {
-    if (!snapshotQuery.data) return undefined;
-
-    const sortedItems = sortComputersSnapshot(snapshotQuery.data, sortBy, sortDir);
-    const total = sortedItems.length;
-    const pageCount = total === 0 ? 0 : Math.ceil(total / pageSize);
-    const safePage = pageCount === 0 ? 1 : Math.min(page, pageCount);
-    const start = (safePage - 1) * pageSize;
-    const items = sortedItems.slice(start, start + pageSize);
-
-    return {
-      items,
-      total,
-      page: safePage,
-      pageSize,
-      pageCount,
-      hasMore: safePage < pageCount,
-    };
-  }, [page, pageSize, snapshotQuery.data, sortBy, sortDir]);
-
-  return {
-    ...snapshotQuery,
-    data,
-  };
 }
 
 export function useComputerDetail(name: string | null) {

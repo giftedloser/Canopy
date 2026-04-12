@@ -44,6 +44,30 @@ interface ReportValidationResult {
   error?: string;
 }
 
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T) => Promise<R>
+) {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  async function runWorker() {
+    while (true) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      if (currentIndex >= items.length) return;
+      results[currentIndex] = await worker(items[currentIndex]);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => runWorker())
+  );
+
+  return results;
+}
+
 const reportSections = [
   { id: "security", title: "Security & Privilege" },
   { id: "identity", title: "Identity Hygiene" },
@@ -283,26 +307,24 @@ export default function ReportsPage() {
     setIsValidatingCatalog(true);
     setValidationResults(null);
 
-    const results: ReportValidationResult[] = [];
-
-    for (const report of reports) {
+    const results = await mapWithConcurrency(reports, 3, async (report): Promise<ReportValidationResult> => {
       try {
         const raw = await runReport(report.id, ouScopes);
         const parsed = parseAdJsonArray(raw);
-        results.push({
+        return {
           id: report.id,
           title: report.title,
           resultCount: parsed.length,
-        });
+        };
       } catch (error) {
-        results.push({
+        return {
           id: report.id,
           title: report.title,
           resultCount: 0,
           error: error instanceof Error ? error.message : String(error),
-        });
+        };
       }
-    }
+    });
 
     setValidationResults(results);
     setIsValidatingCatalog(false);

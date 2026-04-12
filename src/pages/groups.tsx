@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn, exportToCSV } from "@/lib/utils";
 import { useCredentialStore } from "@/stores/credential-store";
-import { useGroups, useGroupMembers, useAddGroupMember, useRemoveGroupMember, useCreateGroup } from "@/hooks/use-ad-groups";
+import { useGroups, useGroupMembers, useAddGroupMember, useRemoveGroupMember, useCreateGroup, useGroupMemberCounts } from "@/hooks/use-ad-groups";
 import { PaginationBar } from "@/components/shared/pagination-bar";
 import { isElevationCancelledError } from "@/lib/tauri-ad";
 import { toast } from "sonner";
@@ -43,12 +43,38 @@ export default function GroupsPage() {
     pageSize,
     sortBy: sortKey,
     sortDir,
+    includeMemberCounts: sortKey === "MemberCount",
   });
 
   const groups = data?.items ?? [];
+  const visibleGroupDns = useMemo(
+    () =>
+      groups
+        .map((group: any) => (typeof group?.DistinguishedName === "string" ? group.DistinguishedName.trim() : ""))
+        .filter(Boolean),
+    [groups]
+  );
+  const { data: memberCounts = {}, isFetching: isFetchingMemberCounts } = useGroupMemberCounts(
+    visibleGroupDns,
+    sortKey !== "MemberCount"
+  );
+  const groupsWithCounts = useMemo(
+    () =>
+      groups.map((group: any) => {
+        if (sortKey === "MemberCount") {
+          return group;
+        }
+
+        const distinguishedName =
+          typeof group?.DistinguishedName === "string" ? group.DistinguishedName.trim() : "";
+        const count = distinguishedName ? memberCounts[distinguishedName] : undefined;
+        return count === undefined ? group : { ...group, MemberCount: count };
+      }),
+    [groups, memberCounts, sortKey]
+  );
   const totalGroups = data?.total ?? 0;
   const pageCount = data?.pageCount ?? 0;
-  const shouldAnimateRows = groups.length <= 120;
+  const shouldAnimateRows = groupsWithCounts.length <= 120;
 
   const handleSort = (key: SortKey) => {
     setPage(1);
@@ -79,7 +105,7 @@ export default function GroupsPage() {
           <span className="text-[11px] text-muted-foreground font-mono bg-secondary px-1.5 py-0.5 rounded-md ml-1">
             {totalGroups}
           </span>
-          {isFetching && !isLoading && (
+          {(isFetching || isFetchingMemberCounts) && !isLoading && (
             <span className="flex items-center gap-1 rounded-md border border-border bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
               <Loader2 className="w-3 h-3 animate-spin" />
               Updating
@@ -95,7 +121,7 @@ export default function GroupsPage() {
             Create Group
           </button>
           <button
-            onClick={() => exportToCSV(groups, "ad-groups")}
+            onClick={() => exportToCSV(groupsWithCounts, "ad-groups")}
             className="flex items-center gap-1.5 h-8 px-3 rounded-md border border-border text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
           >
             <Download className="w-3.5 h-3.5" />
@@ -139,7 +165,7 @@ export default function GroupsPage() {
               <p className="text-xs text-muted-foreground mt-0.5">{error instanceof Error ? error.message : "Unknown"}</p>
             </div>
           </div>
-        ) : groups.length === 0 ? (
+        ) : groupsWithCounts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
             <ShieldCheck className="w-8 h-8 opacity-20 mb-2" />
             <p className="text-sm">No groups found</p>
@@ -182,7 +208,7 @@ export default function GroupsPage() {
               </tr>
             </thead>
             <tbody>
-              {groups.map((group: any, i: number) => (
+              {groupsWithCounts.map((group: any, i: number) => (
                 <tr
                   key={group.SamAccountName || i}
                   onClick={() => setSelectedGroup({ name: group.Name, intent: "view" })}

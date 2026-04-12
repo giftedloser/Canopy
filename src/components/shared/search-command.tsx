@@ -125,14 +125,16 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
   }, [connectionScope]);
 
   useEffect(() => {
-    if (!query.trim()) { setResults(pages); setSelected(0); return; }
+    const normalizedQuery = query.trim();
 
-    const lq = query.toLowerCase();
+    if (!normalizedQuery) { setResults(pages); setSelected(0); return; }
+
+    const lq = normalizedQuery.toLowerCase();
     const filteredPages = pages.filter(
       (p) => p.name.toLowerCase().includes(lq) || p.detail.toLowerCase().includes(lq)
     );
 
-    if (query.trim().length < 3) {
+    if (normalizedQuery.length < 3) {
       requestSequence.current += 1;
       setResults(filteredPages);
       setSelected(0);
@@ -150,7 +152,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
 
     const requestId = ++requestSequence.current;
     const timer = setTimeout(async () => {
-      const cacheKey = `${connectionScope}::${query.trim().toLowerCase()}`;
+      const cacheKey = `${connectionScope}::${normalizedQuery.toLowerCase()}`;
       const cached = searchCache.current.get(cacheKey);
       if (cached && Date.now() - cached.fetchedAt < SEARCH_CACHE_TTL_MS) {
         setResults(cached.results);
@@ -162,20 +164,20 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
       setLoading(true);
       try {
         const [usersRaw, computersRaw, groupsRaw] = await Promise.allSettled([
-          getUsersPage({ search: query, page: 1, pageSize: COMMAND_SEARCH_LIMITS.users, lookupMode: true }),
-          getComputersPage({ search: query, page: 1, pageSize: COMMAND_SEARCH_LIMITS.computers, lookupMode: true }),
-          getGroupsPage({ search: query, page: 1, pageSize: COMMAND_SEARCH_LIMITS.groups, includeMemberCounts: false, lookupMode: true }),
+          getUsersPage({ search: normalizedQuery, page: 1, pageSize: COMMAND_SEARCH_LIMITS.users, lookupMode: true }),
+          getComputersPage({ search: normalizedQuery, page: 1, pageSize: COMMAND_SEARCH_LIMITS.computers, lookupMode: true }),
+          getGroupsPage({ search: normalizedQuery, page: 1, pageSize: COMMAND_SEARCH_LIMITS.groups, includeMemberCounts: false, lookupMode: true }),
         ]);
 
         const adResults: SearchResult[] = [];
-        const normalizedQuery = query.trim().toLocaleLowerCase();
+        const normalizedQueryKey = normalizedQuery.toLocaleLowerCase();
 
         if (usersRaw.status === "fulfilled") {
           const users = normalizePagedResult(parseAdJson(usersRaw.value)).items;
           (Array.isArray(users) ? users : users ? [users] : [])
             .map((u: any) => ({
               row: u,
-              score: getRelevanceScore(normalizedQuery, u.DisplayName, u.Name, u.SamAccountName),
+              score: getRelevanceScore(normalizedQueryKey, u.DisplayName, u.Name, u.SamAccountName),
             }))
             .filter((entry) => entry.score > Number.NEGATIVE_INFINITY)
             .sort((left, right) => right.score - left.score || String(left.row.DisplayName || left.row.Name || "").localeCompare(String(right.row.DisplayName || right.row.Name || ""), undefined, { numeric: true }))
@@ -189,7 +191,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
           (Array.isArray(computers) ? computers : computers ? [computers] : [])
             .map((c: any) => ({
               row: c,
-              score: getRelevanceScore(normalizedQuery, c.Name, c.DNSHostName),
+              score: getRelevanceScore(normalizedQueryKey, c.Name, c.DNSHostName),
             }))
             .filter((entry) => entry.score > Number.NEGATIVE_INFINITY)
             .sort((left, right) => right.score - left.score || String(left.row.Name || "").localeCompare(String(right.row.Name || ""), undefined, { numeric: true }))
@@ -203,7 +205,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
           (Array.isArray(groups) ? groups : groups ? [groups] : [])
             .map((g: any) => ({
               row: g,
-              score: getRelevanceScore(normalizedQuery, g.Name, g.SamAccountName),
+              score: getRelevanceScore(normalizedQueryKey, g.Name, g.SamAccountName),
             }))
             .filter((entry) => entry.score > Number.NEGATIVE_INFINITY)
             .sort((left, right) => right.score - left.score || String(left.row.Name || "").localeCompare(String(right.row.Name || ""), undefined, { numeric: true }))
@@ -241,7 +243,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, isConnected]);
+  }, [query, isConnected, connectionScope]);
 
   const handleSelect = (result: SearchResult) => {
     requestSequence.current += 1;

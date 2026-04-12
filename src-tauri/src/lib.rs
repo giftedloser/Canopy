@@ -30,6 +30,7 @@ pub fn run() {
             commands::computers::move_computer,
             // Groups
             commands::groups::get_groups,
+            commands::groups::get_group_member_counts,
             commands::groups::get_group_members,
             commands::groups::add_group_member,
             commands::groups::remove_group_member,

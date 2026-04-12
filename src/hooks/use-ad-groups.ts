@@ -24,6 +24,7 @@ export function useGroups({
   includeMemberCounts = true,
 }: UseGroupsParams) {
   const isConnected = useCredentialStore((s) => s.isConnected);
+  const normalizedSearch = search?.trim() || undefined;
   const scopeActive = useOuScopeStore((s) => s.scopeActive);
   const enabledOus = useOuScopeStore((s) => s.enabledOus);
   const ouScopes = scopeActive && enabledOus.size > 0
@@ -31,10 +32,10 @@ export function useGroups({
     : undefined;
 
   return useQuery({
-    queryKey: ["groups", search ?? null, page, pageSize, sortBy, sortDir, ouScopes ?? null],
+    queryKey: ["groups", normalizedSearch ?? null, page, pageSize, sortBy, sortDir, includeMemberCounts, ouScopes ?? null],
     queryFn: async () => {
       const raw = await ad.getGroupsPage({
-        search,
+        search: normalizedSearch,
         ouScopes,
         page,
         pageSize,
@@ -51,6 +52,7 @@ export function useGroups({
 
 export function useGroupLookup(search: string, enabled = true) {
   const isConnected = useCredentialStore((s) => s.isConnected);
+  const normalizedSearch = search.trim() || undefined;
   const scopeActive = useOuScopeStore((s) => s.scopeActive);
   const enabledOus = useOuScopeStore((s) => s.enabledOus);
   const ouScopes = scopeActive && enabledOus.size > 0
@@ -58,10 +60,10 @@ export function useGroupLookup(search: string, enabled = true) {
     : undefined;
 
   return useQuery({
-    queryKey: ["groups-lookup", search ?? null, ouScopes ?? null],
+    queryKey: ["groups-lookup", normalizedSearch ?? null, ouScopes ?? null],
     queryFn: async () => {
       const raw = await ad.getGroupsPage({
-        search,
+        search: normalizedSearch,
         ouScopes,
         page: 1,
         pageSize: 20,
@@ -71,7 +73,36 @@ export function useGroupLookup(search: string, enabled = true) {
       });
       return normalizePagedResult<CsvRow>(parseAdJson(raw), 20).items;
     },
-    enabled: isConnected && enabled && search.trim().length >= 2,
+    enabled: isConnected && enabled && !!normalizedSearch && normalizedSearch.length >= 2,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
+export function useGroupMemberCounts(groupDns: string[], enabled = true) {
+  const isConnected = useCredentialStore((s) => s.isConnected);
+  const normalizedGroupDns = [...groupDns]
+    .map((dn) => dn.trim())
+    .filter(Boolean)
+    .sort((left, right) => left.localeCompare(right));
+
+  return useQuery({
+    queryKey: ["group-member-counts", normalizedGroupDns],
+    queryFn: async () => {
+      if (normalizedGroupDns.length === 0) {
+        return {} as Record<string, number>;
+      }
+
+      const raw = await ad.getGroupMemberCounts(normalizedGroupDns);
+      return parseAdJsonArray(raw).reduce<Record<string, number>>((counts, item) => {
+        const dn = typeof item?.DistinguishedName === "string" ? item.DistinguishedName.trim() : "";
+        const memberCount = typeof item?.MemberCount === "number" ? item.MemberCount : Number(item?.MemberCount ?? NaN);
+        if (dn && Number.isFinite(memberCount)) {
+          counts[dn] = memberCount;
+        }
+        return counts;
+      }, {});
+    },
+    enabled: isConnected && enabled && normalizedGroupDns.length > 0,
     placeholderData: (previousData) => previousData,
   });
 }
@@ -97,6 +128,7 @@ export function useAddGroupMember() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["group-members"] });
       qc.invalidateQueries({ queryKey: ["groups"] });
+      qc.invalidateQueries({ queryKey: ["group-member-counts"] });
     },
   });
 }
@@ -109,6 +141,7 @@ export function useRemoveGroupMember() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["group-members"] });
       qc.invalidateQueries({ queryKey: ["groups"] });
+      qc.invalidateQueries({ queryKey: ["group-member-counts"] });
     },
   });
 }
