@@ -11,7 +11,6 @@ import {
   FolderTree,
   PanelLeftClose,
   PanelLeftOpen,
-  TreePine,
   Settings,
 } from "lucide-react";
 
@@ -48,25 +47,26 @@ export function Sidebar({ collapsed, onToggle, onTitleBarMouseDown }: SidebarPro
 
       {/* Logo */}
       <div
-        className="relative flex items-center h-[52px] px-3 border-b border-sidebar-border shrink-0"
+        className={cn(
+          "relative flex items-center h-[60px] shrink-0",
+          collapsed ? "px-0" : "px-4"
+        )}
         onMouseDown={onTitleBarMouseDown}
       >
-        <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
-          {/* Logo mark */}
-          <div className="relative flex items-center justify-center w-7 h-7 shrink-0">
-            <div className="absolute inset-0 rounded-lg bg-primary/20" />
-            <div className="absolute inset-0.5 rounded-md bg-primary/10" />
-            <TreePine className="relative w-3.5 h-3.5 text-primary" />
-          </div>
-
+        <div
+          className={cn(
+            "flex items-center justify-center w-full overflow-visible min-w-0",
+            collapsed && "pl-0 pr-0"
+          )}
+        >
           <div
             className={cn(
-              "flex flex-col overflow-hidden transition-all duration-300",
-              collapsed ? "opacity-0 w-0" : "opacity-100"
+              "flex flex-col items-center overflow-visible transition-all duration-300",
+              collapsed ? "opacity-100 w-auto" : "opacity-100 min-w-0 w-full"
             )}
           >
-            <span className="text-[13px] font-bold tracking-tight text-sidebar-foreground whitespace-nowrap leading-tight">
-              Canopy
+            <span className="sidebar-wordmark text-sidebar-foreground whitespace-nowrap">
+              {collapsed ? "C" : "Canopy"}
             </span>
           </div>
         </div>
@@ -139,7 +139,7 @@ export function Sidebar({ collapsed, onToggle, onTitleBarMouseDown }: SidebarPro
 
       {/* Domain info */}
       {!collapsed && isConnected && connectionInfo && (
-        <div className="relative px-3 py-2.5 border-t border-sidebar-border mx-0 shrink-0">
+        <div className="relative px-3 py-2.5 mx-0 shrink-0">
           <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-sidebar-muted mb-1">
             Connected to
           </p>

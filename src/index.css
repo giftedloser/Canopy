@@ -31,6 +31,11 @@
   src: url('https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5/files/jetbrains-mono-latin-500-normal.woff2') format('woff2');
   font-weight: 500; font-style: normal; font-display: swap;
 }
+@font-face {
+  font-family: 'Comforter';
+  src: url('https://fonts.gstatic.com/s/comforter/v9/H4clBXOCl8nQnlaql3Qa6A.ttf') format('truetype');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
 
 /* ─── Design Tokens (Light) ────────────────────────────────── */
 @theme {
@@ -274,6 +279,16 @@ body {
 .dot-grid {
   background-image: radial-gradient(circle, hsl(218 15% 28% / 0.5) 1px, transparent 1px);
   background-size: 18px 18px;
+}
+
+.sidebar-wordmark {
+  font-family: 'Comforter', cursive;
+  font-size: 1.56rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  display: block;
+  padding-block: 0.1rem;
 }
 
 /* ─── Stagger animations ─────────────────────────────────────── */

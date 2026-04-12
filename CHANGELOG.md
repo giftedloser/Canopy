@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.5] - 2026-04-12
+
+### Changed
+- Refined the sidebar Canopy wordmark with the Comforter font, centered expanded layout, and a compact collapsed `C` state
+- Removed extra sidebar divider lines and cleaned up header spacing so the wordmark fits without clipping
+
+### Fixed
+- Improved Users page search handling for username, `DOMAIN\user`, and UPN-style lookups
+- Corrected sidebar wordmark overflow so descenders and collapsed alignment render cleanly
+
 ## [0.1.4] - 2026-04-12
 
 ### Added
