@@ -161,7 +161,7 @@ function InputField({
         {label}
       </label>
       <div className="relative">
-        <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+        <Icon className="input-leading-icon absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/55" />
         <input
           type={type}
           placeholder={placeholder}
@@ -176,7 +176,7 @@ function InputField({
           data-lpignore="true"
           data-1p-ignore="true"
           data-form-type="other"
-          className={cn("input-base w-full pl-9", mono && "font-mono")}
+          className={cn("input-base input-with-leading-icon w-full", mono && "font-mono")}
         />
       </div>
     </div>

@@ -26,7 +26,7 @@ fn app_name(app: &AppHandle) -> String {
         .product_name
         .clone()
         .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| "Fuzzy Forest".to_string())
+        .unwrap_or_else(|| "Canopy".to_string())
 }
 
 #[cfg(windows)]

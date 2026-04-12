@@ -1,7 +1,7 @@
 <div align="center">
 <img width="310" height="310" alt="Square310x310Logo" src="https://github.com/user-attachments/assets/53865f7c-a7d4-4f69-a950-cd6f0d217755" />
 
-# Fuzzy Forest
+# Canopy
 
 Modern Active Directory administration without MMC sprawl.
 
@@ -21,9 +21,9 @@ Users &nbsp;|&nbsp; Computers &nbsp;|&nbsp; Groups &nbsp;|&nbsp; OU Scoping
 </div>
 
 
-## What is Fuzzy Forest?
+## What is Canopy?
 
-Fuzzy Forest is a Windows-native desktop app for everyday Active Directory administration. It gives you one fast interface for browsing users, computers, groups, directory structure, and on-demand security or hygiene reports without bouncing between legacy consoles all day.
+Canopy is a Windows-native desktop app for everyday Active Directory administration. It gives you one fast interface for browsing users, computers, groups, directory structure, and on-demand security or hygiene reports without bouncing between legacy consoles all day.
 
 Built with Tauri 2, React 19, TypeScript, and Rust. Windows only. Powered by integrated Windows authentication for reads and explicit elevation for writes.
 
@@ -119,7 +119,7 @@ Build artifacts are generated under `src-tauri/target/release/bundle/`.
 
 ## Security Model
 
-Fuzzy Forest is intentionally split between low-friction reads and explicit writes:
+Canopy is intentionally split between low-friction reads and explicit writes:
 
 - Read operations use the current Windows session
 - Write operations require an elevation prompt

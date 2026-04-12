@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] - 2026-04-12
+
+### Added
+- Added a read-only user attribute viewer tab with copy-friendly populated fields
+
+### Fixed
+- Restored user group membership display in the details sidebar with a `MemberOf` fallback path
+- Corrected stale privileged account reporting so disabled privileged accounts are excluded again
+- Increased search-field icon contrast and left padding to prevent placeholder overlap in icon-backed inputs
+
 ## [0.1.3] - 2026-04-06
 
 ### Added
@@ -42,7 +52,7 @@ All notable changes to this project will be documented in this file.
 ## [0.1.0] - 2026-03-30
 
 ### Added
-- Initial public release of the Fuzzy Forest desktop application
+- Initial public release of the Canopy desktop application
 - Windows-native Active Directory dashboard, directory browser, and report workflows
 - Read-only integrated-auth directory access with on-demand elevation for write actions
 - Persistent day-scoped read caching, dashboard lazy loading, and paginated object grids

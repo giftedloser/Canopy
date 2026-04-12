@@ -2,7 +2,7 @@
 
 ## Overview
 
-Fuzzy Forest is a Tauri desktop application with a React frontend and a Rust backend.
+Canopy is a Tauri desktop application with a React frontend and a Rust backend.
 The frontend is responsible for routing, state management, caching, and UX. The backend owns the security boundary around PowerShell execution and Active Directory access.
 
 ## Frontend

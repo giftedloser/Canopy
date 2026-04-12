@@ -2,7 +2,7 @@
 
 ## Our Standard
 
-Fuzzy Forest is maintained as a respectful, technical, and collaborative project.
+Canopy is maintained as a respectful, technical, and collaborative project.
 Participants are expected to:
 
 - Be respectful and professional.
@@ -25,4 +25,4 @@ Project maintainers may edit, remove, or reject contributions and participation 
 
 ## Scope
 
-This code of conduct applies to project spaces, issues, pull requests, discussions, release notes, and other public collaboration channels related to Fuzzy Forest.
+This code of conduct applies to project spaces, issues, pull requests, discussions, release notes, and other public collaboration channels related to Canopy.

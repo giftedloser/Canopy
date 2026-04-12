@@ -1,6 +1,6 @@
 {
-  "productName": "Fuzzy Forest",
-  "version": "0.1.3",
+  "productName": "Canopy",
+  "version": "0.1.4",
   "identifier": "com.fuzzy-forest.app",
   "build": {
     "frontendDist": "../dist",
@@ -11,7 +11,7 @@
   "app": {
     "windows": [
       {
-        "title": "Fuzzy Forest",
+        "title": "Canopy",
         "width": 1400,
         "height": 900,
         "resizable": true,

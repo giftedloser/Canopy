@@ -124,7 +124,7 @@ export default function ComputersPage() {
       {/* Search */}
       <div className="px-5 py-2.5 border-b border-border shrink-0 bg-secondary/20">
         <div className="relative max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+          <Search className="input-leading-icon absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/55" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -137,7 +137,7 @@ export default function ComputersPage() {
             data-lpignore="true"
             data-1p-ignore="true"
             data-form-type="other"
-            className="input-base w-full pl-9"
+            className="input-base input-with-leading-icon w-full"
           />
         </div>
       </div>
@@ -390,13 +390,10 @@ export default function ComputersPage() {
 function ComputerDetailSheet({ name, onClose }: { name: string; onClose: () => void }) {
   const { data, isLoading, error } = useComputerDetail(name);
   const toggle = useToggleComputer();
-  const [tab, setTab] = useState<"details" | "groups">("details");
+  const [tab, setTab] = useState<"details" | "groups" | "attributes">("details");
   const comp   = data?.computer;
-  const groups = Array.isArray(data?.groups)
-    ? data.groups
-    : data?.groups
-    ? [data.groups]
-    : [];
+  const groups = normalizeComputerGroups(data);
+  const attributes = getPopulatedComputerAttributes(comp);
 
   return (
     <>
@@ -458,7 +455,7 @@ function ComputerDetailSheet({ name, onClose }: { name: string; onClose: () => v
 
         {/* Tabs */}
         <div className="flex px-5 gap-4 border-b border-border shrink-0">
-          {(["details", "groups"] as const).map((t) => (
+          {(["details", "groups", "attributes"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -469,7 +466,11 @@ function ComputerDetailSheet({ name, onClose }: { name: string; onClose: () => v
                   : "border-transparent text-muted-foreground hover:text-foreground"
               )}
             >
-              {t === "groups" ? `Groups (${groups.length})` : t}
+              {t === "groups"
+                ? `Groups (${groups.length})`
+                : t === "attributes"
+                ? `Attributes (${attributes.length})`
+                : t}
             </button>
           ))}
         </div>
@@ -519,29 +520,167 @@ function ComputerDetailSheet({ name, onClose }: { name: string; onClose: () => v
                 </DetailSection>
               )}
             </div>
-          ) : (
+          ) : tab === "groups" ? (
             <div className="p-5 space-y-1">
               {groups.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-8 text-center">No group memberships</p>
               ) : (
-                groups.map((g: any, idx: number) => (
-                  <div key={idx} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors">
+                groups.map((group) => (
+                  <div
+                    key={group.DistinguishedName || group.SamAccountName || group.Name}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors"
+                  >
                     <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 shrink-0">
                       <Shield className="w-3.5 h-3.5 text-primary" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-medium truncate">{g.Name}</p>
-                      <p className="text-[11px] text-muted-foreground font-mono">{g.GroupCategory}</p>
+                      <p className="text-[13px] font-medium truncate">{group.Name}</p>
+                      <p className="text-[11px] text-muted-foreground font-mono truncate">
+                        {[group.GroupCategory, group.GroupScope].filter(Boolean).join(" · ") || group.DistinguishedName || "Group membership"}
+                      </p>
                     </div>
                   </div>
                 ))
               )}
             </div>
+          ) : (
+            <ComputerAttributeViewer attributes={attributes} />
           )}
         </div>
       </div>
     </>
   );
+}
+
+type DirectoryGroup = {
+  Name: string;
+  SamAccountName?: string | null;
+  GroupCategory?: string | null;
+  GroupScope?: string | null;
+  DistinguishedName?: string | null;
+};
+
+type ComputerAttribute = {
+  key: string;
+  label: string;
+  value: string;
+};
+
+function normalizeComputerGroups(data: any): DirectoryGroup[] {
+  const directGroups: unknown[] = Array.isArray(data?.groups)
+    ? data.groups
+    : data?.groups
+    ? [data.groups]
+    : [];
+  const memberOf: unknown[] = Array.isArray(data?.computer?.MemberOf)
+    ? data.computer.MemberOf
+    : data?.computer?.MemberOf
+    ? [data.computer.MemberOf]
+    : [];
+  const rawGroups: unknown[] = directGroups.length > 0 ? directGroups : memberOf;
+
+  return rawGroups
+    .map((group: unknown): DirectoryGroup | null => {
+      if (!group) return null;
+      if (typeof group === "string") {
+        return {
+          Name: getNameFromDn(group),
+          DistinguishedName: group,
+        };
+      }
+
+      const groupRecord = group as Record<string, unknown>;
+      const name = String(groupRecord.Name || groupRecord.SamAccountName || groupRecord.DistinguishedName || "").trim();
+      if (!name) return null;
+
+      return {
+        Name: name,
+        SamAccountName: typeof groupRecord.SamAccountName === "string" ? groupRecord.SamAccountName : null,
+        GroupCategory: typeof groupRecord.GroupCategory === "string" ? groupRecord.GroupCategory : null,
+        GroupScope: typeof groupRecord.GroupScope === "string" ? groupRecord.GroupScope : null,
+        DistinguishedName: typeof groupRecord.DistinguishedName === "string" ? groupRecord.DistinguishedName : null,
+      };
+    })
+    .filter((group: DirectoryGroup | null): group is DirectoryGroup => !!group)
+    .sort((left: DirectoryGroup, right: DirectoryGroup) => left.Name.localeCompare(right.Name, undefined, { numeric: true }));
+}
+
+function getPopulatedComputerAttributes(computer: Record<string, unknown> | null | undefined): ComputerAttribute[] {
+  if (!computer || typeof computer !== "object") return [];
+
+  const preferredOrder = [
+    "Name",
+    "DNSHostName",
+    "Enabled",
+    "OperatingSystem",
+    "OperatingSystemVersion",
+    "OperatingSystemServicePack",
+    "IPv4Address",
+    "LastLogonDate",
+    "WhenCreated",
+    "WhenChanged",
+    "Description",
+    "Location",
+    "ManagedBy",
+    "DistinguishedName",
+    "ServicePrincipalNames",
+    "MemberOf",
+  ];
+  const orderMap = new Map(preferredOrder.map((key, index) => [key, index]));
+
+  return Object.entries(computer)
+    .map(([key, value]) => {
+      const serialized = serializeAttributeValue(value);
+      if (!serialized) return null;
+      return {
+        key,
+        label: formatAttributeLabel(key),
+        value: serialized,
+      };
+    })
+    .filter((attribute): attribute is ComputerAttribute => !!attribute)
+    .sort((left, right) => {
+      const leftOrder = orderMap.get(left.key) ?? Number.MAX_SAFE_INTEGER;
+      const rightOrder = orderMap.get(right.key) ?? Number.MAX_SAFE_INTEGER;
+      if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+      return left.label.localeCompare(right.label);
+    });
+}
+
+function serializeAttributeValue(value: unknown): string | null {
+  if (value == null) return null;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : null;
+  }
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : null;
+  if (typeof value === "boolean") return value ? "True" : "False";
+  if (Array.isArray(value)) {
+    const values = value
+      .map((entry) => serializeAttributeValue(entry))
+      .filter((entry): entry is string => !!entry);
+    return values.length > 0 ? values.join("\n") : null;
+  }
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch {
+      return String(value);
+    }
+  }
+  return String(value);
+}
+
+function getNameFromDn(dn: string) {
+  const firstPart = dn.split(",")[0]?.trim() || dn;
+  return firstPart.startsWith("CN=") ? firstPart.slice(3) : firstPart;
+}
+
+function formatAttributeLabel(key: string) {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+    .trim();
 }
 
 function ContextItem({ icon: Icon, label, onClick, destructive = false }: {
@@ -597,16 +736,85 @@ function CopyField({ label, value }: { label: string; value?: string }) {
       <span className="w-3.5 h-3.5 shrink-0" />
       <span className="text-[11px] text-muted-foreground truncate">{label}</span>
       <span className="text-[11px] font-mono truncate text-muted-foreground">{value}</span>
-      <button
-        onClick={() => {
-          navigator.clipboard.writeText(value);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
-        }}
-        className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-primary transition-all"
-      >
-        {copied ? <Check className="w-3 h-3 text-success" /> : <Copy className="w-3 h-3" />}
-      </button>
+      <CopyButton value={value} copied={copied} setCopied={setCopied} className="opacity-0 group-hover:opacity-100" />
     </div>
+  );
+}
+
+function ComputerAttributeViewer({ attributes }: { attributes: ComputerAttribute[] }) {
+  const [copiedAll, setCopiedAll] = useState(false);
+  const copyAllValue = attributes.map((attribute) => `${attribute.label}: ${attribute.value}`).join("\n\n");
+
+  return (
+    <div className="p-5 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[12px] font-semibold">Read-only attribute viewer</p>
+          <p className="text-[11px] text-muted-foreground">Only populated fields are shown. Each value can be copied directly.</p>
+        </div>
+        {attributes.length > 0 && (
+          <CopyButton value={copyAllValue} copied={copiedAll} setCopied={setCopiedAll} label="Copy all" />
+        )}
+      </div>
+
+      {attributes.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-8 text-center">No populated attributes</p>
+      ) : (
+        <div className="space-y-2">
+          {attributes.map((attribute) => (
+            <ComputerAttributeRow key={attribute.key} attribute={attribute} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ComputerAttributeRow({ attribute }: { attribute: ComputerAttribute }) {
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <div className="rounded-lg border border-border/70 bg-secondary/20 p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold text-muted-foreground">{attribute.label}</p>
+          <pre className="mt-1 whitespace-pre-wrap break-all text-[12px] leading-5 text-foreground font-mono bg-card rounded-md border border-border/60 px-3 py-2 overflow-x-auto">
+            {attribute.value}
+          </pre>
+        </div>
+        <CopyButton value={attribute.value} copied={copied} setCopied={setCopied} />
+      </div>
+    </div>
+  );
+}
+
+function CopyButton({
+  value,
+  copied,
+  setCopied,
+  label,
+  className,
+}: {
+  value: string;
+  copied: boolean;
+  setCopied: (value: boolean) => void;
+  label?: string;
+  className?: string;
+}) {
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard.writeText(value);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }}
+      className={cn(
+        "inline-flex items-center gap-1.5 p-1.5 rounded text-muted-foreground hover:text-primary hover:bg-secondary transition-all shrink-0",
+        className
+      )}
+    >
+      {copied ? <Check className="w-3 h-3 text-success" /> : <Copy className="w-3 h-3" />}
+      {label && <span className="text-[11px] font-medium">{copied ? "Copied" : label}</span>}
+    </button>
   );
 }

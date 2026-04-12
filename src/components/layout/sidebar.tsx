@@ -66,10 +66,7 @@ export function Sidebar({ collapsed, onToggle, onTitleBarMouseDown }: SidebarPro
             )}
           >
             <span className="text-[13px] font-bold tracking-tight text-sidebar-foreground whitespace-nowrap leading-tight">
-              Fuzzy Forest
-            </span>
-            <span className="text-[9px] font-medium uppercase tracking-[0.12em] text-sidebar-muted whitespace-nowrap leading-tight">
-              AD Management
+              Canopy
             </span>
           </div>
         </div>

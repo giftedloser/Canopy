@@ -11,6 +11,7 @@ pub async fn get_users(
     sort_by: Option<String>,
     sort_dir: Option<String>,
     fetch_all: Option<bool>,
+    lookup_mode: Option<bool>,
 ) -> Result<String, String> {
     let server = server.trim().to_string();
     if server.is_empty() {
@@ -20,6 +21,7 @@ pub async fn get_users(
     let page = page.unwrap_or(1).max(1);
     let page_size = page_size.unwrap_or(100).clamp(25, 200);
     let fetch_all = fetch_all.unwrap_or(false);
+    let lookup_mode = lookup_mode.unwrap_or(false);
     let skip = (page - 1) * page_size;
 
     let props = "DisplayName,EmailAddress,Department,Title,Enabled,LockedOut,LastLogonDate,WhenCreated,DistinguishedName,SamAccountName,Description,EmployeeNumber";
@@ -43,10 +45,17 @@ pub async fn get_users(
 
     let filter_expr = if let Some(ref search_term) = search {
         let safe = sanitizer::sanitize_ps_string(search_term)?;
-        format!(
-            "\"Name -like '*{}*' -or SamAccountName -like '*{}*' -or EmailAddress -like '*{}*' -or EmployeeNumber -like '*{}*' -or Description -like '*{}*'\"",
-            safe, safe, safe, safe, safe
-        )
+        if lookup_mode {
+            format!(
+                "\"Name -like '*{}*' -or DisplayName -like '*{}*' -or SamAccountName -like '*{}*'\"",
+                safe, safe, safe
+            )
+        } else {
+            format!(
+                "\"Name -like '*{}*' -or SamAccountName -like '*{}*' -or EmailAddress -like '*{}*' -or EmployeeNumber -like '*{}*' -or Description -like '*{}*'\"",
+                safe, safe, safe, safe, safe
+            )
+        }
     } else if let Some(ref f) = filter {
         if f == "enabled" || f == "disabled" || f == "locked" {
             "*".to_string()
@@ -238,8 +247,27 @@ try {{
 }} catch {{
     $groups = @()
 }}
+
+if ($groups.Count -eq 0 -and @($user.MemberOf).Count -gt 0) {{
+    $groups = @(
+        @($user.MemberOf) |
+            ForEach-Object {{
+                $dn = [string]$_
+                $cn = ($dn -split ',')[0]
+                [PSCustomObject]@{{
+                    Name = if ($cn -like 'CN=*') {{ $cn.Substring(3) }} else {{ $cn }}
+                    SamAccountName = $null
+                    GroupCategory = $null
+                    GroupScope = $null
+                    DistinguishedName = $dn
+                }}
+            }} |
+            Sort-Object Name
+    )
+}}
+
 @{{
-    user = $user | Select-Object Name,SamAccountName,DisplayName,GivenName,Surname,EmailAddress,Department,Title,Company,Office,Manager,StreetAddress,City,State,PostalCode,Country,TelephoneNumber,MobilePhone,Enabled,LockedOut,LastLogonDate,PasswordLastSet,PasswordNeverExpires,AccountExpirationDate,WhenCreated,WhenChanged,DistinguishedName,Description,HomeDirectory,HomeDrive,ScriptPath,ProfilePath
+    user = $user | Select-Object Name,SamAccountName,DisplayName,GivenName,Surname,EmailAddress,Department,Title,Company,Office,Manager,StreetAddress,City,State,PostalCode,Country,TelephoneNumber,MobilePhone,Enabled,LockedOut,LastLogonDate,PasswordLastSet,PasswordNeverExpires,AccountExpirationDate,WhenCreated,WhenChanged,DistinguishedName,Description,HomeDirectory,HomeDrive,ScriptPath,ProfilePath,MemberOf
     groups = $groups
 }} | ConvertTo-Json -Depth 4"#,
         sam = safe_sam,

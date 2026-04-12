@@ -10,6 +10,7 @@ pub async fn get_computers(
     sort_by: Option<String>,
     sort_dir: Option<String>,
     fetch_all: Option<bool>,
+    lookup_mode: Option<bool>,
 ) -> Result<String, String> {
     let server = server.trim().to_string();
     if server.is_empty() {
@@ -19,6 +20,7 @@ pub async fn get_computers(
     let page = page.unwrap_or(1).max(1);
     let page_size = page_size.unwrap_or(100).clamp(25, 200);
     let fetch_all = fetch_all.unwrap_or(false);
+    let lookup_mode = lookup_mode.unwrap_or(false);
     let skip = (page - 1) * page_size;
 
     let props = "Name,OperatingSystem,OperatingSystemVersion,LastLogonDate,Enabled,IPv4Address,DistinguishedName,WhenCreated,Description,DNSHostName,Location";
@@ -35,7 +37,11 @@ pub async fn get_computers(
 
     let filter_expr = if let Some(ref term) = search {
         let safe = sanitizer::sanitize_ps_string(term)?;
-        format!("\"Name -like '*{}*' -or Description -like '*{}*'\"", safe, safe)
+        if lookup_mode {
+            format!("\"Name -like '*{}*' -or DNSHostName -like '*{}*'\"", safe, safe)
+        } else {
+            format!("\"Name -like '*{}*' -or Description -like '*{}*'\"", safe, safe)
+        }
     } else {
         "*".to_string()
     };
@@ -188,16 +194,51 @@ pub async fn get_computer_detail(
     let srv = sanitizer::sanitize_ps_string(&server)?;
 
     let script = format!(
-        r#"$computer = Get-ADComputer -Identity '{name}' -Server '{server}' -Properties *
-$groups = @()
-try {{
-    $groups = @(Get-ADPrincipalGroupMembership -Identity $computer.DistinguishedName -Server '{server}' |
-        Select-Object Name, SamAccountName, GroupCategory, GroupScope)
-}} catch {{
-    $groups = @()
+        r#"function Get-ComputerPrincipalGroups([object] $computer, [string] $serverName) {{
+    $identities = @(
+        $computer,
+        [string]$computer.DistinguishedName,
+        [string]$computer.SamAccountName,
+        [string]$computer.Name,
+        "{name}$"
+    ) | Where-Object {{ -not [string]::IsNullOrWhiteSpace([string]$_) }}
+
+    foreach ($identity in $identities) {{
+        try {{
+            $resolved = @(Get-ADPrincipalGroupMembership -Identity $identity -Server $serverName -ErrorAction Stop |
+                Select-Object Name, SamAccountName, GroupCategory, GroupScope, DistinguishedName)
+            if ($resolved.Count -gt 0) {{
+                return @($resolved | Sort-Object Name -Unique)
+            }}
+        }} catch {{
+            continue
+        }}
+    }}
+
+    return @()
+}}
+
+$computer = Get-ADComputer -Identity '{name}' -Server '{server}' -Properties *
+$groups = @(Get-ComputerPrincipalGroups $computer '{server}')
+if ($groups.Count -eq 0 -and @($computer.MemberOf).Count -gt 0) {{
+    $groups = @(
+        @($computer.MemberOf) |
+            ForEach-Object {{
+                $dn = [string]$_
+                $cn = ($dn -split ',')[0]
+                [PSCustomObject]@{{
+                    Name = if ($cn -like 'CN=*') {{ $cn.Substring(3) }} else {{ $cn }}
+                    SamAccountName = $null
+                    GroupCategory = $null
+                    GroupScope = $null
+                    DistinguishedName = $dn
+                }}
+            }} |
+            Sort-Object Name
+    )
 }}
 @{{
-    computer = $computer | Select-Object Name,DNSHostName,OperatingSystem,OperatingSystemVersion,OperatingSystemServicePack,LastLogonDate,Enabled,IPv4Address,DistinguishedName,WhenCreated,WhenChanged,Description,Location,ManagedBy,ServicePrincipalNames
+    computer = $computer | Select-Object Name,DNSHostName,OperatingSystem,OperatingSystemVersion,OperatingSystemServicePack,LastLogonDate,Enabled,IPv4Address,DistinguishedName,WhenCreated,WhenChanged,Description,Location,ManagedBy,ServicePrincipalNames,MemberOf
     groups = $groups
 }} | ConvertTo-Json -Depth 4"#,
         name = safe_name,

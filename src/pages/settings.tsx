@@ -109,7 +109,7 @@ function LaunchAtStartupSection() {
           <div>
             <p className="text-[13px] font-semibold">Launch at Startup</p>
             <p className="text-[11px] text-muted-foreground">
-              Start Fuzzy Forest automatically when you sign in to Windows
+              Start Canopy automatically when you sign in to Windows
             </p>
           </div>
         </div>
@@ -141,8 +141,8 @@ function LaunchAtStartupSection() {
             {loading
               ? "Checking current startup registration..."
               : enabled
-              ? "Fuzzy Forest is currently registered to launch when Windows starts."
-              : "Fuzzy Forest will only open when you launch it manually."}
+              ? "Canopy is currently registered to launch when Windows starts."
+              : "Canopy will only open when you launch it manually."}
           </p>
         </div>
         {busy && <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />}
@@ -187,7 +187,7 @@ function ElevationDefaultsSection() {
             Admin Username
           </label>
           <div className="relative max-w-sm">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+            <User className="input-leading-icon absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/55" />
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -200,7 +200,7 @@ function ElevationDefaultsSection() {
               data-lpignore="true"
               data-1p-ignore="true"
               data-form-type="other"
-              className="input-base w-full pl-9"
+              className="input-base input-with-leading-icon w-full"
             />
           </div>
         </div>

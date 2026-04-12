@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for contributing to Fuzzy Forest.
+Thanks for contributing to Canopy.
 
 ## Before You Start
 

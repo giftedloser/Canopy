@@ -109,7 +109,7 @@ export function MoveToOuDialog({
     >
       <div className="space-y-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+          <Search className="input-leading-icon absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/55" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -122,7 +122,7 @@ export function MoveToOuDialog({
             data-lpignore="true"
             data-1p-ignore="true"
             data-form-type="other"
-            className="input-base w-full pl-9"
+            className="input-base input-with-leading-icon w-full"
           />
         </div>
 
@@ -212,7 +212,7 @@ export function GroupPickerDialog({
     >
       <div className="space-y-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+          <Search className="input-leading-icon absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/55" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -225,7 +225,7 @@ export function GroupPickerDialog({
             data-lpignore="true"
             data-1p-ignore="true"
             data-form-type="other"
-            className="input-base w-full pl-9"
+            className="input-base input-with-leading-icon w-full"
           />
         </div>
 

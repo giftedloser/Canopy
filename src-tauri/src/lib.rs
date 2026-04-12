@@ -41,5 +41,5 @@ pub fn run() {
             commands::directory::get_ou_contents,
         ])
         .run(tauri::generate_context!())
-        .expect("error while running Fuzzy Forest");
+        .expect("error while running Canopy");
 }

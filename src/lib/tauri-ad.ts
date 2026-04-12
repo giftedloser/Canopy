@@ -175,6 +175,7 @@ export async function getUsersPage(params: {
   sortBy?: string;
   sortDir?: "asc" | "desc";
   fetchAll?: boolean;
+  lookupMode?: boolean;
 }) {
   return invokeRead<string>("get_users", {
     search: params.search,
@@ -190,6 +191,8 @@ export async function getUsersPage(params: {
     sortDir: params.sortDir,
     fetch_all: params.fetchAll,
     fetchAll: params.fetchAll,
+    lookup_mode: params.lookupMode,
+    lookupMode: params.lookupMode,
   });
 }
 
@@ -278,6 +281,7 @@ export async function getComputersPage(params: {
   sortBy?: string;
   sortDir?: "asc" | "desc";
   fetchAll?: boolean;
+  lookupMode?: boolean;
 }) {
   return invokeRead<string>("get_computers", {
     search: params.search,
@@ -292,6 +296,8 @@ export async function getComputersPage(params: {
     sortDir: params.sortDir,
     fetch_all: params.fetchAll,
     fetchAll: params.fetchAll,
+    lookup_mode: params.lookupMode,
+    lookupMode: params.lookupMode,
   });
 }
 
@@ -332,6 +338,7 @@ export async function getGroupsPage(params: {
   sortBy?: string;
   sortDir?: "asc" | "desc";
   includeMemberCounts?: boolean;
+  lookupMode?: boolean;
 }) {
   return invokeRead<string>("get_groups", {
     search: params.search,
@@ -346,6 +353,8 @@ export async function getGroupsPage(params: {
     sortDir: params.sortDir,
     include_member_counts: params.includeMemberCounts,
     includeMemberCounts: params.includeMemberCounts,
+    lookup_mode: params.lookupMode,
+    lookupMode: params.lookupMode,
   });
 }
 

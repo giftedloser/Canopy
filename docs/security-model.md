@@ -2,7 +2,7 @@
 
 ## Principles
 
-Fuzzy Forest is built around a simple rule:
+Canopy is built around a simple rule:
 
 - Read operations should be easy and low-friction.
 - Write operations should be explicit, elevated, and short-lived.

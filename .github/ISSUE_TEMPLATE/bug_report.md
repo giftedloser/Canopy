@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a reproducible problem in Fuzzy Forest
+about: Report a reproducible problem in Canopy
 title: "[Bug] "
 labels: bug
 assignees: ""
@@ -26,7 +26,7 @@ What happened instead?
 
 ## Environment
 
-- Fuzzy Forest version:
+- Canopy version:
 - Windows version:
 - Domain-joined machine: yes/no
 - RSAT Active Directory module installed: yes/no

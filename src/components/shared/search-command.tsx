@@ -33,6 +33,11 @@ type CachedSearchResult = {
 
 const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
 const SEARCH_CACHE_MAX_ENTRIES = 25;
+const COMMAND_SEARCH_LIMITS = {
+  users: 10,
+  computers: 8,
+  groups: 8,
+} as const;
 
 const pages: SearchResult[] = [
   { type: "page", name: "Dashboard",  detail: "Overview & stats" },
@@ -67,6 +72,30 @@ const typeBadge: Record<string, string> = {
   group:    "bg-emerald-500/10 text-emerald-400",
   page:     "bg-secondary text-muted-foreground",
 };
+
+function getRelevanceScore(query: string, ...fields: Array<string | undefined>) {
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  if (!normalizedQuery) return Number.NEGATIVE_INFINITY;
+
+  let bestScore = Number.NEGATIVE_INFINITY;
+  for (const field of fields) {
+    const normalizedField = field?.trim().toLocaleLowerCase();
+    if (!normalizedField) continue;
+
+    const exactIndex = normalizedField.indexOf(normalizedQuery);
+    if (exactIndex === -1) continue;
+
+    let score = 10;
+    if (normalizedField === normalizedQuery) score = 100;
+    else if (normalizedField.startsWith(normalizedQuery)) score = 80;
+    else if (normalizedField.includes(` ${normalizedQuery}`) || normalizedField.includes(`-${normalizedQuery}`) || normalizedField.includes(`_${normalizedQuery}`)) score = 60;
+    else score = 40 - Math.min(exactIndex, 20);
+
+    bestScore = Math.max(bestScore, score);
+  }
+
+  return bestScore;
+}
 
 export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
   const navigate    = useNavigate();
@@ -133,34 +162,53 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
       setLoading(true);
       try {
         const [usersRaw, computersRaw, groupsRaw] = await Promise.allSettled([
-          getUsersPage({ search: query, page: 1, pageSize: 5 }),
-          getComputersPage({ search: query, page: 1, pageSize: 3 }),
-          getGroupsPage({ search: query, page: 1, pageSize: 3, includeMemberCounts: false }),
+          getUsersPage({ search: query, page: 1, pageSize: COMMAND_SEARCH_LIMITS.users, lookupMode: true }),
+          getComputersPage({ search: query, page: 1, pageSize: COMMAND_SEARCH_LIMITS.computers, lookupMode: true }),
+          getGroupsPage({ search: query, page: 1, pageSize: COMMAND_SEARCH_LIMITS.groups, includeMemberCounts: false, lookupMode: true }),
         ]);
 
         const adResults: SearchResult[] = [];
+        const normalizedQuery = query.trim().toLocaleLowerCase();
 
         if (usersRaw.status === "fulfilled") {
           const users = normalizePagedResult(parseAdJson(usersRaw.value)).items;
           (Array.isArray(users) ? users : users ? [users] : [])
-            .slice(0, 5)
-            .forEach((u: any) => adResults.push({
+            .map((u: any) => ({
+              row: u,
+              score: getRelevanceScore(normalizedQuery, u.DisplayName, u.Name, u.SamAccountName),
+            }))
+            .filter((entry) => entry.score > Number.NEGATIVE_INFINITY)
+            .sort((left, right) => right.score - left.score || String(left.row.DisplayName || left.row.Name || "").localeCompare(String(right.row.DisplayName || right.row.Name || ""), undefined, { numeric: true }))
+            .slice(0, COMMAND_SEARCH_LIMITS.users)
+            .forEach(({ row: u }) => adResults.push({
               type: "user", name: u.DisplayName || u.Name, detail: u.SamAccountName, sam: u.SamAccountName,
             }));
         }
         if (computersRaw.status === "fulfilled") {
           const computers = normalizePagedResult(parseAdJson(computersRaw.value)).items;
           (Array.isArray(computers) ? computers : computers ? [computers] : [])
-            .slice(0, 3)
-            .forEach((c: any) => adResults.push({
+            .map((c: any) => ({
+              row: c,
+              score: getRelevanceScore(normalizedQuery, c.Name, c.DNSHostName),
+            }))
+            .filter((entry) => entry.score > Number.NEGATIVE_INFINITY)
+            .sort((left, right) => right.score - left.score || String(left.row.Name || "").localeCompare(String(right.row.Name || ""), undefined, { numeric: true }))
+            .slice(0, COMMAND_SEARCH_LIMITS.computers)
+            .forEach(({ row: c }) => adResults.push({
               type: "computer", name: c.Name, detail: c.OperatingSystem || "Computer",
             }));
         }
         if (groupsRaw.status === "fulfilled") {
           const groups = normalizePagedResult(parseAdJson(groupsRaw.value)).items;
           (Array.isArray(groups) ? groups : groups ? [groups] : [])
-            .slice(0, 3)
-            .forEach((g: any) => adResults.push({
+            .map((g: any) => ({
+              row: g,
+              score: getRelevanceScore(normalizedQuery, g.Name, g.SamAccountName),
+            }))
+            .filter((entry) => entry.score > Number.NEGATIVE_INFINITY)
+            .sort((left, right) => right.score - left.score || String(left.row.Name || "").localeCompare(String(right.row.Name || ""), undefined, { numeric: true }))
+            .slice(0, COMMAND_SEARCH_LIMITS.groups)
+            .forEach(({ row: g }) => adResults.push({
               type: "group", name: g.Name, detail: `${g.GroupCategory} · ${g.GroupScope}`,
             }));
         }

@@ -157,7 +157,7 @@ export default function UsersPage() {
       {/* Filters */}
       <div className="flex items-center gap-3 px-5 py-2.5 border-b border-border shrink-0 bg-secondary/20">
         <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+          <Search className="input-leading-icon absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/55" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -170,7 +170,7 @@ export default function UsersPage() {
             data-lpignore="true"
             data-1p-ignore="true"
             data-form-type="other"
-            className="input-base w-full pl-9"
+            className="input-base input-with-leading-icon w-full"
           />
         </div>
         <div className="flex items-center gap-1">

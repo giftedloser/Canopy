@@ -10,6 +10,7 @@ pub async fn get_groups(
     sort_by: Option<String>,
     sort_dir: Option<String>,
     include_member_counts: Option<bool>,
+    lookup_mode: Option<bool>,
 ) -> Result<String, String> {
     let server = server.trim().to_string();
     if server.is_empty() {
@@ -32,10 +33,15 @@ pub async fn get_groups(
     let sort_desc = matches!(sort_dir.as_deref(), Some("desc") | Some("DESC") | Some("Desc"));
     let sort_by_member_count = sort_prop == "MemberCount";
     let include_member_counts = include_member_counts.unwrap_or(true);
+    let lookup_mode = lookup_mode.unwrap_or(false);
 
     let filter_expr = if let Some(ref term) = search {
         let safe = sanitizer::sanitize_ps_string(term)?;
-        format!("\"Name -like '*{}*'\"", safe)
+        if lookup_mode {
+            format!("\"Name -like '*{}*' -or SamAccountName -like '*{}*'\"", safe, safe)
+        } else {
+            format!("\"Name -like '*{}*'\"", safe)
+        }
     } else {
         "*".to_string()
     };

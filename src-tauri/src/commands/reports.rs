@@ -340,7 +340,7 @@ $cutoff = (Get-Date).AddDays(-90)
 $privilegedMembership = Get-PrivilegedMembershipMap
 $results = foreach ($user in @({users_expr})) {{
     $dn = [string]$user.DistinguishedName
-    if ([string]::IsNullOrWhiteSpace($dn) -or -not $privilegedMembership.ContainsKey($dn)) {{
+    if (-not $user.Enabled -or [string]::IsNullOrWhiteSpace($dn) -or -not $privilegedMembership.ContainsKey($dn)) {{
         continue
     }}
 

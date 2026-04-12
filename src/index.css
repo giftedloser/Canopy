@@ -391,6 +391,12 @@ body {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px hsl(38 92% 54% / 0.15);
 }
+.input-base.input-with-leading-icon {
+  padding-left: 44px;
+}
+.input-leading-icon {
+  pointer-events: none;
+}
 
 .dashboard-donut-chart .recharts-pie:focus,
 .dashboard-donut-chart .recharts-pie:focus-visible,

@@ -2,9 +2,9 @@
   "name": "fuzzy-forest",
   "description": "Windows-native Active Directory management desktop app built with Tauri, React, and Rust.",
   "private": true,
-  "version": "0.1.3",
+  "version": "0.1.4",
   "license": "MIT",
-  "author": "Fuzzy Forest contributors",
+  "author": "Canopy contributors",
   "homepage": "https://github.com/giftedloser/FuzzyForest",
   "repository": {
     "type": "git",

@@ -107,7 +107,7 @@ export default function GroupsPage() {
       {/* Search */}
       <div className="px-5 py-2.5 border-b border-border shrink-0 bg-secondary/20">
         <div className="relative max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+          <Search className="input-leading-icon absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/55" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -120,7 +120,7 @@ export default function GroupsPage() {
             data-lpignore="true"
             data-1p-ignore="true"
             data-form-type="other"
-            className="input-base w-full pl-9"
+            className="input-base input-with-leading-icon w-full"
           />
         </div>
       </div>
@@ -353,14 +353,14 @@ function GroupDetailSheet({
         {/* Add member */}
         <div className="px-5 py-3 border-b border-border flex gap-2 bg-secondary/20">
           <div className="relative flex-1">
-            <UserPlus className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/40" />
+            <UserPlus className="input-leading-icon absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/55" />
             <input
               value={newMemberSam}
               onChange={(e) => setNewMemberSam(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAdd()}
               placeholder="Add member by username..."
               autoFocus={initialIntent === "add"}
-              className="input-base w-full pl-9 font-mono"
+              className="input-base input-with-leading-icon w-full font-mono"
             />
           </div>
           <button
