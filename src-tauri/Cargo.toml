@@ -1,12 +1,12 @@
 [package]
-name = "fuzzy-forest"
+name = "canopy"
 version = "0.1.4"
 description = "Windows-native Active Directory management desktop app built with Tauri, React, and Rust."
 authors = ["Canopy contributors"]
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/giftedloser/FuzzyForest"
-homepage = "https://github.com/giftedloser/FuzzyForest"
+repository = "https://github.com/giftedloser/Canopy"
+homepage = "https://github.com/giftedloser/Canopy"
 readme = "../README.md"
 
 [lib]

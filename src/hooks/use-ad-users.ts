@@ -79,6 +79,7 @@ export function useUsers({
   sortDir,
 }: UseUsersParams) {
   const isConnected = useCredentialStore((s) => s.isConnected);
+  const normalizedSearch = search?.trim() || undefined;
   const scopeActive = useOuScopeStore((s) => s.scopeActive);
   const enabledOus = useOuScopeStore((s) => s.enabledOus);
   const ouScopes = scopeActive && enabledOus.size > 0
@@ -86,7 +87,7 @@ export function useUsers({
     : undefined;
 
   const snapshotQuery = useQuery({
-    queryKey: ["users-snapshot", search ?? null, status, ouScopes ?? null],
+    queryKey: ["users-snapshot", normalizedSearch ?? null, status, ouScopes ?? null],
     queryFn: async () => {
       const filter =
         status === "enabled"
@@ -97,7 +98,7 @@ export function useUsers({
           ? "locked"
           : undefined;
       const raw = await ad.getUsersPage({
-        search,
+        search: normalizedSearch,
         filter,
         ouScopes,
         fetchAll: true,

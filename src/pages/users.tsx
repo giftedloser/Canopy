@@ -161,7 +161,7 @@ export default function UsersPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name, username, employee # or description..."
+            placeholder="Search name, username, UPN, employee #, or description..."
             autoComplete="off"
             name="users-search"
             spellCheck={false}

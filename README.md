@@ -7,11 +7,11 @@ Modern Active Directory administration without MMC sprawl.
 
 Users &nbsp;|&nbsp; Computers &nbsp;|&nbsp; Groups &nbsp;|&nbsp; OU Scoping
 
-[![Latest Release](https://img.shields.io/github/v/release/giftedloser/FuzzyForest?display_name=tag&sort=semver)](https://github.com/giftedloser/FuzzyForest/releases)
+[![Latest Release](https://img.shields.io/github/v/release/giftedloser/Canopy?display_name=tag&sort=semver)](https://github.com/giftedloser/Canopy/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Built with Tauri](https://img.shields.io/badge/Built%20with-Tauri%202-24C8DB?logo=tauri&logoColor=white)](https://tauri.app)
 [![Windows](https://img.shields.io/badge/Windows-only-0078D4?logo=windows&logoColor=white)](https://www.microsoft.com/windows)
-[![CI](https://github.com/giftedloser/FuzzyForest/actions/workflows/ci.yml/badge.svg)](https://github.com/giftedloser/FuzzyForest/actions/workflows/ci.yml)
+[![CI](https://github.com/giftedloser/Canopy/actions/workflows/ci.yml/badge.svg)](https://github.com/giftedloser/Canopy/actions/workflows/ci.yml)
 
 <br />
 

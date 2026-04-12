@@ -1,5 +1,33 @@
 use crate::powershell::{executor::{self, AdCredentials}, sanitizer};
 
+fn build_user_search_terms(search_term: &str) -> Vec<String> {
+    let trimmed = search_term.trim();
+    if trimmed.is_empty() {
+        return Vec::new();
+    }
+
+    let mut terms = Vec::new();
+    for candidate in [
+        Some(trimmed),
+        trimmed.rsplit('\\').next(),
+        trimmed.split('@').next(),
+    ]
+    .into_iter()
+    .flatten()
+    .map(str::trim)
+    .filter(|value| !value.is_empty())
+    {
+        if !terms
+            .iter()
+            .any(|existing: &String| existing.eq_ignore_ascii_case(candidate))
+        {
+            terms.push(candidate.to_string());
+        }
+    }
+
+    terms
+}
+
 #[tauri::command]
 pub async fn get_users(
     server: String,
@@ -44,17 +72,24 @@ pub async fn get_users(
     };
 
     let filter_expr = if let Some(ref search_term) = search {
-        let safe = sanitizer::sanitize_ps_string(search_term)?;
-        if lookup_mode {
-            format!(
-                "\"Name -like '*{}*' -or DisplayName -like '*{}*' -or SamAccountName -like '*{}*'\"",
-                safe, safe, safe
-            )
+        let terms = build_user_search_terms(search_term);
+        if terms.is_empty() {
+            "*".to_string()
         } else {
-            format!(
-                "\"Name -like '*{}*' -or SamAccountName -like '*{}*' -or EmailAddress -like '*{}*' -or EmployeeNumber -like '*{}*' -or Description -like '*{}*'\"",
-                safe, safe, safe, safe, safe
-            )
+            let mut clauses = Vec::new();
+            for term in terms {
+                let safe = sanitizer::sanitize_ps_string(&term)?;
+                if lookup_mode {
+                    clauses.push(format!(
+                        "Name -like '*{safe}*' -or DisplayName -like '*{safe}*' -or SamAccountName -like '*{safe}*' -or UserPrincipalName -like '*{safe}*'"
+                    ));
+                } else {
+                    clauses.push(format!(
+                        "Name -like '*{safe}*' -or DisplayName -like '*{safe}*' -or SamAccountName -like '*{safe}*' -or UserPrincipalName -like '*{safe}*' -or EmailAddress -like '*{safe}*' -or EmployeeNumber -like '*{safe}*' -or Description -like '*{safe}*'"
+                    ));
+                }
+            }
+            format!("\"{}\"", clauses.join(" -or "))
         }
     } else if let Some(ref f) = filter {
         if f == "enabled" || f == "disabled" || f == "locked" {
