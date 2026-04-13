@@ -16,6 +16,29 @@ interface UseUsersParams {
   sortDir: "asc" | "desc";
 }
 
+function getUserDetailPlaceholder(qc: ReturnType<typeof useQueryClient>, sam: string | null) {
+  if (!sam) return null;
+  const normalizedSam = sam.trim().toLowerCase();
+  if (!normalizedSam) return null;
+
+  const pages = qc.getQueriesData<PagedResult<CsvRow>>({
+    queryKey: ["users-snapshot"],
+  });
+
+  for (const [, page] of pages) {
+    const items = page?.items ?? [];
+    const match = items.find((item) => {
+      const candidate = item?.SamAccountName;
+      return typeof candidate === "string" && candidate.trim().toLowerCase() === normalizedSam;
+    });
+    if (match) {
+      return { user: match, groups: [] };
+    }
+  }
+
+  return null;
+}
+
 export function useUsers({
   search,
   status = "all",
@@ -62,6 +85,7 @@ export function useUsers({
 
 export function useUserDetail(sam: string | null) {
   const isConnected = useCredentialStore((s) => s.isConnected);
+  const qc = useQueryClient();
   return useQuery({
     queryKey: ["user-detail", sam],
     queryFn: async () => {
@@ -70,6 +94,23 @@ export function useUserDetail(sam: string | null) {
       return parseAdJson(raw);
     },
     enabled: isConnected && !!sam,
+    staleTime: QUERY_STALE_TIMES.detail,
+    placeholderData: () => getUserDetailPlaceholder(qc, sam),
+  });
+}
+
+export function useUserGroups(sam: string | null, enabled = true) {
+  const isConnected = useCredentialStore((s) => s.isConnected);
+  return useQuery({
+    queryKey: ["user-groups", sam],
+    queryFn: async () => {
+      if (!sam) return [];
+      const raw = await ad.getUserGroups(sam);
+      const parsed = parseAdJson(raw);
+      if (Array.isArray(parsed)) return parsed;
+      return parsed ? [parsed] : [];
+    },
+    enabled: isConnected && !!sam && enabled,
     staleTime: QUERY_STALE_TIMES.detail,
   });
 }
@@ -88,6 +129,7 @@ export function useResetPassword() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users-snapshot"] });
       qc.invalidateQueries({ queryKey: ["user-detail"] });
+      qc.invalidateQueries({ queryKey: ["user-groups"] });
     },
   });
 }
@@ -99,6 +141,7 @@ export function useUnlockUser() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users-snapshot"] });
       qc.invalidateQueries({ queryKey: ["user-detail"] });
+      qc.invalidateQueries({ queryKey: ["user-groups"] });
     },
   });
 }
@@ -111,6 +154,7 @@ export function useToggleUser() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users-snapshot"] });
       qc.invalidateQueries({ queryKey: ["user-detail"] });
+      qc.invalidateQueries({ queryKey: ["user-groups"] });
     },
   });
 }
@@ -131,6 +175,7 @@ export function useAddUserToGroup() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users-snapshot"] });
       qc.invalidateQueries({ queryKey: ["user-detail"] });
+      qc.invalidateQueries({ queryKey: ["user-groups"] });
       qc.invalidateQueries({ queryKey: ["groups"] });
       qc.invalidateQueries({ queryKey: ["group-members"] });
       qc.invalidateQueries({ queryKey: ["group-member-counts"] });
@@ -146,6 +191,7 @@ export function useMoveUser() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users-snapshot"] });
       qc.invalidateQueries({ queryKey: ["user-detail"] });
+      qc.invalidateQueries({ queryKey: ["user-groups"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       qc.invalidateQueries({ queryKey: ["ou-contents"] });
     },

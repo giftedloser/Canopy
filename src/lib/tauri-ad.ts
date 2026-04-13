@@ -203,6 +203,13 @@ export async function getUserDetail(samAccountName: string) {
   });
 }
 
+export async function getUserGroups(samAccountName: string) {
+  return invokeRead<string>("get_user_groups", {
+    samAccountName,
+    sam_account_name: samAccountName,
+  });
+}
+
 // Users (write)
 export async function resetUserPassword(
   samAccountName: string,

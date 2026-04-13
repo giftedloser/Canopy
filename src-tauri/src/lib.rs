@@ -17,6 +17,7 @@ pub fn run() {
             // Users
             commands::users::get_users,
             commands::users::get_user_detail,
+            commands::users::get_user_groups,
             commands::users::reset_user_password,
             commands::users::unlock_user,
             commands::users::toggle_user,

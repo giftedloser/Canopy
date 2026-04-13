@@ -274,13 +274,52 @@ pub async fn get_user_detail(
     let srv = sanitizer::sanitize_ps_string(&server)?;
 
     let script = format!(
-        r#"$user = Get-ADUser -Identity '{sam}' -Server '{server}' -Properties *
+        r#"$user = Get-ADUser -Identity '{sam}' -Server '{server}' -Properties GivenName,Surname,EmailAddress,Department,Title,Company,Office,Manager,StreetAddress,City,State,PostalCode,Country,TelephoneNumber,MobilePhone,Enabled,LockedOut,LastLogonDate,PasswordLastSet,PasswordNeverExpires,AccountExpirationDate,WhenCreated,WhenChanged,DistinguishedName,Description,HomeDirectory,HomeDrive,ScriptPath,ProfilePath,MemberOf
+
+@{{
+    user = $user | Select-Object Name,SamAccountName,DisplayName,GivenName,Surname,EmailAddress,Department,Title,Company,Office,Manager,StreetAddress,City,State,PostalCode,Country,TelephoneNumber,MobilePhone,Enabled,LockedOut,LastLogonDate,PasswordLastSet,PasswordNeverExpires,AccountExpirationDate,WhenCreated,WhenChanged,DistinguishedName,Description,HomeDirectory,HomeDrive,ScriptPath,ProfilePath,MemberOf
+    groups = @()
+}} | ConvertTo-Json -Depth 4"#,
+        sam = safe_sam,
+        server = srv,
+    );
+
+    executor::execute_ps_script(&script)
+}
+
+#[tauri::command]
+pub async fn get_user_groups(
+    server: String,
+    sam_account_name: String,
+) -> Result<String, String> {
+    let server = server.trim().to_string();
+    if server.is_empty() {
+        return Err("Server is required".to_string());
+    }
+    let safe_sam = sanitizer::sanitize_sam(&sam_account_name)?;
+    let srv = sanitizer::sanitize_ps_string(&server)?;
+
+    let script = format!(
+        r#"$user = Get-ADUser -Identity '{sam}' -Server '{server}' -Properties MemberOf,DistinguishedName,SamAccountName,Name
 $groups = @()
-try {{
-    $groups = @(Get-ADPrincipalGroupMembership -Identity $user.DistinguishedName -Server '{server}' |
-        Select-Object Name, SamAccountName, GroupCategory, GroupScope)
-}} catch {{
-    $groups = @()
+$identities = @(
+    $user.DistinguishedName,
+    $user.SamAccountName,
+    $user.Name,
+    $(if ($user.SamAccountName) {{ "$($user.SamAccountName)`$" }} else {{ $null }})
+) | Where-Object {{ $_ }}
+
+foreach ($identity in $identities) {{
+    try {{
+        $resolved = @(Get-ADPrincipalGroupMembership -Identity $identity -Server '{server}' -ErrorAction Stop |
+            Select-Object Name,SamAccountName,GroupCategory,GroupScope,DistinguishedName)
+        if ($resolved.Count -gt 0) {{
+            $groups = $resolved
+            break
+        }}
+    }} catch {{
+        continue
+    }}
 }}
 
 if ($groups.Count -eq 0 -and @($user.MemberOf).Count -gt 0) {{
@@ -301,10 +340,7 @@ if ($groups.Count -eq 0 -and @($user.MemberOf).Count -gt 0) {{
     )
 }}
 
-@{{
-    user = $user | Select-Object Name,SamAccountName,DisplayName,GivenName,Surname,EmailAddress,Department,Title,Company,Office,Manager,StreetAddress,City,State,PostalCode,Country,TelephoneNumber,MobilePhone,Enabled,LockedOut,LastLogonDate,PasswordLastSet,PasswordNeverExpires,AccountExpirationDate,WhenCreated,WhenChanged,DistinguishedName,Description,HomeDirectory,HomeDrive,ScriptPath,ProfilePath,MemberOf
-    groups = $groups
-}} | ConvertTo-Json -Depth 4"#,
+$groups | ConvertTo-Json -Depth 4"#,
         sam = safe_sam,
         server = srv,
     );

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { cn, formatDate, formatDateTime, getOUFromDN } from "@/lib/utils";
-import { useUserDetail, useUnlockUser, useToggleUser, useResetPassword } from "@/hooks/use-ad-users";
+import { useUserDetail, useUserGroups, useUnlockUser, useToggleUser, useResetPassword } from "@/hooks/use-ad-users";
 import { isElevationCancelledError } from "@/lib/tauri-ad";
 import { toast } from "sonner";
 import {
@@ -31,6 +31,7 @@ interface UserDetailSheetProps {
 export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
   const { data, isLoading, error } = useUserDetail(sam);
   const [tab, setTab]               = useState<"details" | "groups" | "attributes">("details");
+  const groupsQuery = useUserGroups(sam, tab === "groups");
   const [showResetPw, setShowResetPw] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const unlock  = useUnlockUser();
@@ -40,7 +41,7 @@ export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
   if (!sam) return null;
 
   const user   = data?.user;
-  const groups = normalizeUserGroups(data);
+  const groups = normalizeUserGroups(groupsQuery.data, data);
   const attributes = getPopulatedAttributes(user);
 
   const initials = (user?.DisplayName || user?.Name || sam)
@@ -244,6 +245,12 @@ export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
             </div>
           ) : tab === "groups" ? (
             <div className="p-5 space-y-1">
+              {groupsQuery.isLoading && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/70 bg-secondary/20 text-[11px] text-muted-foreground">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Loading group details...
+                </div>
+              )}
               {groups.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-8 text-center">No group memberships</p>
               ) : (
@@ -288,16 +295,16 @@ type UserAttribute = {
   value: string;
 };
 
-function normalizeUserGroups(data: any): DirectoryGroup[] {
-  const directGroups: unknown[] = Array.isArray(data?.groups)
-    ? data.groups
-    : data?.groups
-    ? [data.groups]
+function normalizeUserGroups(groupData: unknown, detailData?: any): DirectoryGroup[] {
+  const directGroups: unknown[] = Array.isArray(groupData)
+    ? groupData
+    : groupData
+    ? [groupData]
     : [];
-  const memberOf: unknown[] = Array.isArray(data?.user?.MemberOf)
-    ? data.user.MemberOf
-    : data?.user?.MemberOf
-    ? [data.user.MemberOf]
+  const memberOf: unknown[] = Array.isArray(detailData?.user?.MemberOf)
+    ? detailData.user.MemberOf
+    : detailData?.user?.MemberOf
+    ? [detailData.user.MemberOf]
     : [];
   const rawGroups: unknown[] = directGroups.length > 0 ? directGroups : memberOf;
 
