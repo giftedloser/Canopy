@@ -37,9 +37,9 @@ pub async fn run_report(
         "Get-ADGroup -LDAPFilter '(!(member=*))' -Server $s -Properties Description".to_string()
     };
     let large_groups_expr = if has_ou_scopes {
-        "Get-ScopedReportGroups -UseLargeMemberRange $true".to_string()
+        "Get-ScopedReportGroups -AdditionalProperties @('GroupCategory','GroupScope')".to_string()
     } else {
-        "Get-ADGroup -Filter * -Server $s -Properties Description,'member;range=0-49'".to_string()
+        "Get-ADGroup -Filter * -Server $s -Properties Description,GroupCategory,GroupScope".to_string()
     };
     let sid_groups_expr = if has_ou_scopes {
         "Get-ScopedReportGroups -AdditionalProperties @('SIDHistory','GroupCategory','GroupScope')"
@@ -267,7 +267,14 @@ function Get-ExactLargeGroupMemberCount([string] $identity, [int] $initialCount)
 }}
 
 $results = foreach ($group in @({groups_expr})) {{
-    $memberProp = $group.PSObject.Properties | Where-Object {{ $_.Name -like 'member;range=*' }} | Select-Object -First 1
+    $rangeGroup = $null
+    try {{
+        $rangeGroup = Get-ADGroup -Identity $group.DistinguishedName -Server $s -Properties 'member;range=0-49' -ErrorAction Stop
+    }} catch {{
+        continue
+    }}
+
+    $memberProp = $rangeGroup.PSObject.Properties | Where-Object {{ $_.Name -like 'member;range=*' }} | Select-Object -First 1
     if (-not $memberProp) {{
         continue
     }}
