@@ -80,10 +80,15 @@ Add-WindowsCapability -Online -Name Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0
 
 ### Install From Releases
 
-1. Download the latest installer from the [GitHub Releases](https://github.com/giftedloser/Canopy/releases) page.
-2. Install on a Windows machine with WebView2, RSAT AD tools, and line-of-sight to your directory environment.
-3. Launch Canopy and connect with integrated Windows authentication for reads.
-4. Use the elevation prompt only for write actions like password resets, unlocks, group membership changes, and object moves.
+Download `Canopy v1.0.0` directly:
+
+- [MSI installer](https://github.com/giftedloser/Canopy/releases/download/v1.0.0/Canopy_1.0.0_x64_en-US.msi)
+- [Setup executable](https://github.com/giftedloser/Canopy/releases/download/v1.0.0/Canopy_1.0.0_x64-setup.exe)
+- [All releases](https://github.com/giftedloser/Canopy/releases)
+
+1. Install on a Windows machine with WebView2, RSAT AD tools, and line-of-sight to your directory environment.
+2. Launch Canopy and connect with integrated Windows authentication for reads.
+3. Use the elevation prompt only for write actions like password resets, unlocks, group membership changes, and object moves.
 
 ### Development
 
