@@ -4,6 +4,7 @@ import { cn, exportToCSV } from "@/lib/utils";
 import { useCredentialStore } from "@/stores/credential-store";
 import { useGroups, useGroupMembers, useAddGroupMember, useRemoveGroupMember, useCreateGroup, useGroupMemberCounts } from "@/hooks/use-ad-groups";
 import { PaginationBar } from "@/components/shared/pagination-bar";
+import { AppContextMenu, ContextMenuItem } from "@/components/shared/context-menu";
 import { isElevationCancelledError } from "@/lib/tauri-ad";
 import { toast } from "sonner";
 import {
@@ -292,13 +293,8 @@ export default function GroupsPage() {
       )}
       {showCreate    && <CreateGroupDialog onClose={() => setShowCreate(false)} />}
       {contextMenu && (
-        <>
-          <div className="fixed inset-0 z-50" onClick={() => setContextMenu(null)} />
-          <div
-            className="fixed z-50 bg-popover border border-border rounded-lg shadow-2xl p-1 min-w-[170px] animate-[scale-in_0.12s_ease-out]"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
-          >
-            <ContextItem
+        <AppContextMenu position={contextMenu} onClose={() => setContextMenu(null)}>
+            <ContextMenuItem
               icon={Users}
               label="View Members"
               onClick={() => {
@@ -306,7 +302,7 @@ export default function GroupsPage() {
                 setContextMenu(null);
               }}
             />
-            <ContextItem
+            <ContextMenuItem
               icon={UserPlus}
               label="Add Member"
               onClick={() => {
@@ -314,7 +310,7 @@ export default function GroupsPage() {
                 setContextMenu(null);
               }}
             />
-            <ContextItem
+            <ContextMenuItem
               icon={UserMinus}
               label="Remove Member"
               onClick={() => {
@@ -322,8 +318,7 @@ export default function GroupsPage() {
                 setContextMenu(null);
               }}
             />
-          </div>
-        </>
+        </AppContextMenu>
       )}
     </div>
   );
@@ -457,22 +452,6 @@ function GroupDetailSheet({
         </div>
       </div>
     </>
-  );
-}
-
-function ContextItem({ icon: Icon, label, onClick, destructive = false }: {
-  icon: any; label: string; onClick: () => void; destructive?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-[12px] transition-colors",
-        destructive ? "text-destructive hover:bg-destructive/10" : "text-foreground hover:bg-secondary"
-      )}
-    >
-      <Icon className="w-3.5 h-3.5" /> {label}
-    </button>
   );
 }
 

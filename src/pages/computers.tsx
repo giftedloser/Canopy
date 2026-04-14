@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn, formatDate, getOUFromDN, exportToCSV } from "@/lib/utils";
 import { useCredentialStore } from "@/stores/credential-store";
-import { useComputers, useComputerDetail, useToggleComputer, useMoveComputer } from "@/hooks/use-ad-computers";
+import { useComputers, useComputerDetail, useComputerGroups, useToggleComputer, useMoveComputer } from "@/hooks/use-ad-computers";
 import { useResizablePercentColumns } from "@/hooks/use-resizable-columns";
 import { PaginationBar } from "@/components/shared/pagination-bar";
+import { AppContextMenu, ContextMenuItem } from "@/components/shared/context-menu";
 import { isElevationCancelledError } from "@/lib/tauri-ad";
 import { MoveToOuDialog } from "@/components/shared/object-action-dialogs";
 import { toast } from "sonner";
@@ -324,13 +325,8 @@ export default function ComputersPage() {
         <ComputerDetailSheet name={selectedComputer} onClose={() => setSelectedComputer(null)} />
       )}
       {contextMenu && (
-        <>
-          <div className="fixed inset-0 z-50" onClick={() => setContextMenu(null)} />
-          <div
-            className="fixed z-50 bg-popover border border-border rounded-lg shadow-2xl p-1 min-w-[170px] animate-[scale-in_0.12s_ease-out]"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
-          >
-            <ContextItem
+        <AppContextMenu position={contextMenu} onClose={() => setContextMenu(null)}>
+            <ContextMenuItem
               icon={Monitor}
               label="View Details"
               onClick={() => {
@@ -338,7 +334,7 @@ export default function ComputersPage() {
                 setContextMenu(null);
               }}
             />
-            <ContextItem
+            <ContextMenuItem
               icon={Power}
               label={contextMenu.enabled ? "Disable Computer" : "Enable Computer"}
               destructive={contextMenu.enabled}
@@ -353,7 +349,7 @@ export default function ComputersPage() {
                 setContextMenu(null);
               }}
             />
-            <ContextItem
+            <ContextMenuItem
               icon={FolderTree}
               label="Move"
               onClick={() => {
@@ -361,8 +357,7 @@ export default function ComputersPage() {
                 setContextMenu(null);
               }}
             />
-          </div>
-        </>
+        </AppContextMenu>
       )}
       {moveComputerState && (
         <MoveToOuDialog
@@ -391,8 +386,9 @@ function ComputerDetailSheet({ name, onClose }: { name: string; onClose: () => v
   const { data, isLoading, error } = useComputerDetail(name);
   const toggle = useToggleComputer();
   const [tab, setTab] = useState<"details" | "groups" | "attributes">("details");
+  const groupsQuery = useComputerGroups(name, tab === "groups");
   const comp   = data?.computer;
-  const groups = normalizeComputerGroups(data);
+  const groups = normalizeComputerGroups(groupsQuery.data, data);
   const attributes = getPopulatedComputerAttributes(comp);
 
   return (
@@ -522,6 +518,12 @@ function ComputerDetailSheet({ name, onClose }: { name: string; onClose: () => v
             </div>
           ) : tab === "groups" ? (
             <div className="p-5 space-y-1">
+              {groupsQuery.isLoading && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/70 bg-secondary/20 text-[11px] text-muted-foreground">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Loading group details...
+                </div>
+              )}
               {groups.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-8 text-center">No group memberships</p>
               ) : (
@@ -566,16 +568,16 @@ type ComputerAttribute = {
   value: string;
 };
 
-function normalizeComputerGroups(data: any): DirectoryGroup[] {
-  const directGroups: unknown[] = Array.isArray(data?.groups)
-    ? data.groups
-    : data?.groups
-    ? [data.groups]
+function normalizeComputerGroups(groupData: unknown, detailData?: any): DirectoryGroup[] {
+  const directGroups: unknown[] = Array.isArray(groupData)
+    ? groupData
+    : groupData
+    ? [groupData]
     : [];
-  const memberOf: unknown[] = Array.isArray(data?.computer?.MemberOf)
-    ? data.computer.MemberOf
-    : data?.computer?.MemberOf
-    ? [data.computer.MemberOf]
+  const memberOf: unknown[] = Array.isArray(detailData?.computer?.MemberOf)
+    ? detailData.computer.MemberOf
+    : detailData?.computer?.MemberOf
+    ? [detailData.computer.MemberOf]
     : [];
   const rawGroups: unknown[] = directGroups.length > 0 ? directGroups : memberOf;
 
@@ -681,22 +683,6 @@ function formatAttributeLabel(key: string) {
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
     .trim();
-}
-
-function ContextItem({ icon: Icon, label, onClick, destructive = false }: {
-  icon: any; label: string; onClick: () => void; destructive?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-[12px] transition-colors",
-        destructive ? "text-destructive hover:bg-destructive/10" : "text-foreground hover:bg-secondary"
-      )}
-    >
-      <Icon className="w-3.5 h-3.5" /> {label}
-    </button>
-  );
 }
 
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {

@@ -14,6 +14,7 @@ import {
 } from "@/hooks/use-ad-users";
 import { useResizablePercentColumns } from "@/hooks/use-resizable-columns";
 import { PaginationBar } from "@/components/shared/pagination-bar";
+import { AppContextMenu, ContextMenuItem } from "@/components/shared/context-menu";
 import { isElevationCancelledError } from "@/lib/tauri-ad";
 import { UserDetailSheet } from "@/components/users/user-detail-sheet";
 import { GroupPickerDialog, MoveToOuDialog } from "@/components/shared/object-action-dialogs";
@@ -366,14 +367,9 @@ export default function UsersPage() {
 
       {/* Context menu */}
       {contextMenu && (
-        <>
-          <div className="fixed inset-0 z-50" onClick={() => setContextMenu(null)} />
-          <div
-            className="fixed z-50 bg-popover border border-border rounded-lg shadow-2xl p-1 min-w-[170px] animate-[scale-in_0.12s_ease-out]"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
-          >
-            <ContextItem icon={UsersIcon} label="View Details" onClick={() => { setSelectedSam(contextMenu.sam); setContextMenu(null); }} />
-            <ContextItem
+        <AppContextMenu position={contextMenu} onClose={() => setContextMenu(null)}>
+            <ContextMenuItem icon={UsersIcon} label="View Details" onClick={() => { setSelectedSam(contextMenu.sam); setContextMenu(null); }} />
+            <ContextMenuItem
               icon={KeyRound}
               label="Reset Password"
               onClick={() => {
@@ -382,7 +378,7 @@ export default function UsersPage() {
               }}
             />
             {contextMenu.locked && (
-              <ContextItem
+              <ContextMenuItem
                 icon={Unlock}
                 label="Unlock Account"
                 onClick={async () => {
@@ -397,7 +393,7 @@ export default function UsersPage() {
                 }}
               />
             )}
-            <ContextItem
+            <ContextMenuItem
               icon={UserPlus}
               label="Add to Group"
               onClick={() => {
@@ -405,7 +401,7 @@ export default function UsersPage() {
                 setContextMenu(null);
               }}
             />
-            <ContextItem
+            <ContextMenuItem
               icon={Power}
               label={contextMenu.enabled ? "Disable Account" : "Enable Account"}
               destructive={contextMenu.enabled}
@@ -420,7 +416,7 @@ export default function UsersPage() {
                 setContextMenu(null);
               }}
             />
-            <ContextItem
+            <ContextMenuItem
               icon={FolderTree}
               label="Move"
               onClick={() => {
@@ -428,8 +424,7 @@ export default function UsersPage() {
                 setContextMenu(null);
               }}
             />
-          </div>
-        </>
+        </AppContextMenu>
       )}
 
       {selectedSam && <UserDetailSheet sam={selectedSam} onClose={() => setSelectedSam(null)} />}
@@ -538,22 +533,6 @@ function StatusBadge({ enabled, locked }: { enabled: boolean; locked: boolean })
 }
 
 /* ─── Context item ───────────────────────────────────────────── */
-function ContextItem({ icon: Icon, label, onClick, destructive = false }: {
-  icon: any; label: string; onClick: () => void; destructive?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-[12px] transition-colors",
-        destructive ? "text-destructive hover:bg-destructive/10" : "text-foreground hover:bg-secondary"
-      )}
-    >
-      <Icon className="w-3.5 h-3.5" /> {label}
-    </button>
-  );
-}
-
 function ResetPasswordDialog({
   sam,
   loading,

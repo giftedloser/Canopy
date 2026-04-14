@@ -27,6 +27,7 @@ pub fn run() {
             // Computers
             commands::computers::get_computers,
             commands::computers::get_computer_detail,
+            commands::computers::get_computer_groups,
             commands::computers::toggle_computer,
             commands::computers::move_computer,
             // Groups

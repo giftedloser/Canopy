@@ -315,6 +315,13 @@ export async function getComputerDetail(computerName: string) {
   });
 }
 
+export async function getComputerGroups(computerName: string) {
+  return invokeRead<string>("get_computer_groups", {
+    computerName,
+    computer_name: computerName,
+  });
+}
+
 // Computers (write)
 export async function toggleComputer(computerName: string, enable: boolean) {
   return invokeWriteWithElevation<string>(

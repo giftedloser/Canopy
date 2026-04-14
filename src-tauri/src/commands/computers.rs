@@ -194,13 +194,38 @@ pub async fn get_computer_detail(
     let srv = sanitizer::sanitize_ps_string(&server)?;
 
     let script = format!(
-        r#"function Get-ComputerPrincipalGroups([object] $computer, [string] $serverName) {{
+        r#"$computer = Get-ADComputer -Identity '{name}' -Server '{server}' -Properties DNSHostName,OperatingSystem,OperatingSystemVersion,OperatingSystemServicePack,LastLogonDate,Enabled,IPv4Address,DistinguishedName,WhenCreated,WhenChanged,Description,Location,ManagedBy,ServicePrincipalNames,MemberOf
+@{{
+    computer = $computer | Select-Object Name,DNSHostName,OperatingSystem,OperatingSystemVersion,OperatingSystemServicePack,LastLogonDate,Enabled,IPv4Address,DistinguishedName,WhenCreated,WhenChanged,Description,Location,ManagedBy,ServicePrincipalNames,MemberOf
+    groups = @()
+}} | ConvertTo-Json -Depth 4"#,
+        name = safe_name,
+        server = srv,
+    );
+
+    executor::execute_ps_script(&script)
+}
+
+#[tauri::command]
+pub async fn get_computer_groups(
+    server: String,
+    computer_name: String,
+) -> Result<String, String> {
+    let server = server.trim().to_string();
+    if server.is_empty() {
+        return Err("Server is required".to_string());
+    }
+    let safe_name = sanitizer::sanitize_sam(&computer_name)?;
+    let srv = sanitizer::sanitize_ps_string(&server)?;
+
+    let script = format!(
+        r#"function Get-ComputerPrincipalGroups([object] $computer, [string] $serverName, [string] $computerName) {{
     $identities = @(
         $computer,
         [string]$computer.DistinguishedName,
         [string]$computer.SamAccountName,
         [string]$computer.Name,
-        "{name}$"
+        "$computerName`$"
     ) | Where-Object {{ -not [string]::IsNullOrWhiteSpace([string]$_) }}
 
     foreach ($identity in $identities) {{
@@ -218,8 +243,8 @@ pub async fn get_computer_detail(
     return @()
 }}
 
-$computer = Get-ADComputer -Identity '{name}' -Server '{server}' -Properties *
-$groups = @(Get-ComputerPrincipalGroups $computer '{server}')
+$computer = Get-ADComputer -Identity '{name}' -Server '{server}' -Properties MemberOf,DistinguishedName,SamAccountName,Name
+$groups = @(Get-ComputerPrincipalGroups $computer '{server}' '{name}')
 if ($groups.Count -eq 0 -and @($computer.MemberOf).Count -gt 0) {{
     $groups = @(
         @($computer.MemberOf) |
@@ -237,10 +262,7 @@ if ($groups.Count -eq 0 -and @($computer.MemberOf).Count -gt 0) {{
             Sort-Object Name
     )
 }}
-@{{
-    computer = $computer | Select-Object Name,DNSHostName,OperatingSystem,OperatingSystemVersion,OperatingSystemServicePack,LastLogonDate,Enabled,IPv4Address,DistinguishedName,WhenCreated,WhenChanged,Description,Location,ManagedBy,ServicePrincipalNames,MemberOf
-    groups = $groups
-}} | ConvertTo-Json -Depth 4"#,
+$groups | ConvertTo-Json -Depth 4"#,
         name = safe_name,
         server = srv,
     );

@@ -15,6 +15,29 @@ interface UseComputersParams {
   sortDir: "asc" | "desc";
 }
 
+function getComputerDetailPlaceholder(qc: ReturnType<typeof useQueryClient>, name: string | null) {
+  if (!name) return null;
+  const normalizedName = name.trim().toLowerCase();
+  if (!normalizedName) return null;
+
+  const pages = qc.getQueriesData<PagedResult<CsvRow>>({
+    queryKey: ["computers-snapshot"],
+  });
+
+  for (const [, page] of pages) {
+    const items = page?.items ?? [];
+    const match = items.find((item) => {
+      const candidate = item?.Name;
+      return typeof candidate === "string" && candidate.trim().toLowerCase() === normalizedName;
+    });
+    if (match) {
+      return { computer: match, groups: [] };
+    }
+  }
+
+  return null;
+}
+
 export function useComputers({
   search,
   page,
@@ -51,6 +74,7 @@ export function useComputers({
 
 export function useComputerDetail(name: string | null) {
   const isConnected = useCredentialStore((s) => s.isConnected);
+  const qc = useQueryClient();
   return useQuery({
     queryKey: ["computer-detail", name],
     queryFn: async () => {
@@ -59,6 +83,23 @@ export function useComputerDetail(name: string | null) {
       return parseAdJson(raw);
     },
     enabled: isConnected && !!name,
+    staleTime: QUERY_STALE_TIMES.detail,
+    placeholderData: () => getComputerDetailPlaceholder(qc, name),
+  });
+}
+
+export function useComputerGroups(name: string | null, enabled = true) {
+  const isConnected = useCredentialStore((s) => s.isConnected);
+  return useQuery({
+    queryKey: ["computer-groups", name],
+    queryFn: async () => {
+      if (!name) return [];
+      const raw = await ad.getComputerGroups(name);
+      const parsed = parseAdJson(raw);
+      if (Array.isArray(parsed)) return parsed;
+      return parsed ? [parsed] : [];
+    },
+    enabled: isConnected && !!name && enabled,
     staleTime: QUERY_STALE_TIMES.detail,
   });
 }
@@ -71,6 +112,7 @@ export function useToggleComputer() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["computers-snapshot"] });
       qc.invalidateQueries({ queryKey: ["computer-detail"] });
+      qc.invalidateQueries({ queryKey: ["computer-groups"] });
     },
   });
 }
@@ -83,6 +125,7 @@ export function useMoveComputer() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["computers-snapshot"] });
       qc.invalidateQueries({ queryKey: ["computer-detail"] });
+      qc.invalidateQueries({ queryKey: ["computer-groups"] });
       qc.invalidateQueries({ queryKey: ["computer-os-breakdown"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       qc.invalidateQueries({ queryKey: ["ou-contents"] });
