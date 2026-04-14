@@ -56,7 +56,7 @@ Built with Tauri 2, React 19, TypeScript, and Rust. Windows only. Powered by int
 
 - Desktop app, not a browser wrapper pretending to be an admin console
 - Lazy-loaded routes and chart views for better perceived performance
-- Day-scoped persistent read caching for fast repeat use
+- Connection-scoped local caching with bounded TTLs for fast repeat use without staying stale all day
 - Keyboard-friendly navigation patterns throughout the UI
 
 ## Requirements
@@ -77,6 +77,13 @@ Add-WindowsCapability -Online -Name Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0
 ```
 
 ## Quick Start
+
+### Install From Releases
+
+1. Download the latest installer from the [GitHub Releases](https://github.com/giftedloser/Canopy/releases) page.
+2. Install on a Windows machine with WebView2, RSAT AD tools, and line-of-sight to your directory environment.
+3. Launch Canopy and connect with integrated Windows authentication for reads.
+4. Use the elevation prompt only for write actions like password resets, unlocks, group membership changes, and object moves.
 
 ### Development
 
@@ -126,6 +133,7 @@ Canopy is intentionally split between low-friction reads and explicit writes:
 - Passwords are used per operation and are not stored
 - Input is sanitized before PowerShell command construction
 - The shared read worker falls back to isolated execution on failure
+- Cached query data is scoped to the connected domain, server, and user context
 
 Read more in [docs/security-model.md](docs/security-model.md) and [SECURITY.md](SECURITY.md).
 

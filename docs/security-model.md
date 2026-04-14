@@ -14,7 +14,7 @@ Read operations use the current Windows session and the selected domain controll
 Properties of the read path:
 
 - No credential prompt for normal lookup workflows
-- Day-scoped local caching for performance
+- Bounded local caching for performance with connection-scoped persistence
 - Read-only PowerShell session reuse for faster repeated queries
 - Automatic fallback to isolated one-shot PowerShell execution if the shared session misbehaves
 

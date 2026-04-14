@@ -4,7 +4,9 @@
 
 1. Update version numbers in:
    - `package.json`
+   - `package-lock.json`
    - `src-tauri/Cargo.toml`
+   - `src-tauri/Cargo.lock`
    - `src-tauri/tauri.conf.json`
 2. Update `CHANGELOG.md`.
 3. Run:
@@ -19,17 +21,18 @@ npm run tauri:build
 5. Create an annotated tag:
 
 ```bash
-git tag -a v0.1.0 -m "Release v0.1.0"
+git tag -a v0.1.6 -m "Release v0.1.6"
 ```
 
 6. Push the branch and tag:
 
 ```bash
 git push origin main
-git push origin v0.1.0
+git push origin v0.1.6
 ```
 
-7. Draft a GitHub release using the generated installer assets from `src-tauri/target/release/bundle/`.
+7. Draft or publish the GitHub release using the generated installer assets from `src-tauri/target/release/bundle/`.
+8. Verify the release title, notes, and installer names all reflect the current Canopy version.
 
 ## Suggested Release Notes Sections
 

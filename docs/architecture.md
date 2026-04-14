@@ -41,7 +41,7 @@ The read path is optimized for low-friction access:
 2. The backend sanitizes user input.
 3. Read-only PowerShell commands run through a shared session to avoid per-read process startup cost.
 4. If the shared read session fails, the backend falls back to the original isolated one-shot execution path.
-5. Results are returned as JSON and persisted locally for the rest of the day.
+5. Results are returned as JSON and cached with bounded TTLs based on query type.
 
 This keeps the app fast without weakening the write boundary.
 
@@ -62,7 +62,7 @@ Write operations do not use the shared read session.
 Caching is layered:
 
 - In-memory query caching for navigation smoothness
-- Day-scoped persisted query storage for repeat sessions
+- Connection-scoped persisted query storage with per-query expiration windows
 - Targeted refetch on user-triggered refresh
 
-The goal is to feel immediate for normal navigation while still allowing administrators to refresh live directory state when needed.
+The goal is to feel immediate for normal navigation while still allowing administrators to refresh live directory state when needed without keeping stale results around all day.
