@@ -406,25 +406,23 @@ export default function UsersPage() {
                 setContextMenu(null);
               }}
             />
-            {contextMenu.locked && (
-              <ContextMenuItem
-                icon={Unlock}
-                label="Unlock Account"
-                onClick={async () => {
-                  try {
-                    await unlock.mutateAsync(contextMenu.sam);
-                    toast.success("Account unlocked");
-                  } catch (error: unknown) {
-                    notifyActionError(error, {
-                      fallback: "Failed to unlock account",
-                      cancelled: "Unlock cancelled",
-                    });
-                  } finally {
-                    setContextMenu(null);
-                  }
-                }}
-              />
-            )}
+            <ContextMenuItem
+              icon={Unlock}
+              label="Unlock Account"
+              onClick={async () => {
+                try {
+                  await unlock.mutateAsync(contextMenu.sam);
+                  toast.success("Account unlocked");
+                } catch (error: unknown) {
+                  notifyActionError(error, {
+                    fallback: "Failed to unlock account",
+                    cancelled: "Unlock cancelled",
+                  });
+                } finally {
+                  setContextMenu(null);
+                }
+              }}
+            />
             <ContextMenuItem
               icon={UserPlus}
               label="Add to Group"

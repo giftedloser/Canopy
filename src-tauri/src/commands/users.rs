@@ -364,6 +364,7 @@ pub async fn reset_user_password(
 
     let script = format!(
         r#"Set-ADAccountPassword -Identity '{sam}' -Server '{server}' -Credential $cred -Reset -NewPassword (ConvertTo-SecureString '{pw}' -AsPlainText -Force)
+Set-ADUser -Identity '{sam}' -Server '{server}' -Credential $cred -ChangePasswordAtLogon $false
 @{{ success = $true; message = 'Password reset successfully' }} | ConvertTo-Json"#,
         sam = safe_sam,
         server = srv,
@@ -386,8 +387,18 @@ pub async fn unlock_user(
     let srv = sanitizer::sanitize_ps_string(server.trim())?;
 
     let script = format!(
-        r#"Unlock-ADAccount -Identity '{sam}' -Server '{server}' -Credential $cred
-@{{ success = $true; message = 'Account unlocked successfully' }} | ConvertTo-Json"#,
+        r#"try {{
+    Unlock-ADAccount -Identity '{sam}' -Server '{server}' -Credential $cred -ErrorAction Stop | Out-Null
+    $message = 'Account unlocked successfully'
+}} catch {{
+    $errorText = [string]$_.Exception.Message
+    if ($errorText -match 'not currently locked out' -or $errorText -match 'not locked out' -or $errorText -match 'cannot be unlocked because it is not locked') {{
+        $message = 'Account was already unlocked'
+    }} else {{
+        throw
+    }}
+}}
+@{{ success = $true; message = $message }} | ConvertTo-Json"#,
         sam = safe_sam,
         server = srv,
     );

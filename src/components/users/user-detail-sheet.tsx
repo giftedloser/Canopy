@@ -127,22 +127,20 @@ export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
               </span>
             )}
             <div className="flex-1" />
-            {user.LockedOut && (
-              <ActionButton
-                icon={Unlock} label="Unlock" loading={unlock.isPending} variant="warning"
-                onClick={async () => {
-                  try {
-                    await unlock.mutateAsync(sam);
-                    toast.success("Account unlocked");
-                  } catch (error: unknown) {
-                    notifyActionError(error, {
-                      fallback: "Failed to unlock account",
-                      cancelled: "Unlock cancelled",
-                    });
-                  }
-                }}
-              />
-            )}
+            <ActionButton
+              icon={Unlock} label="Unlock" loading={unlock.isPending} variant="warning"
+              onClick={async () => {
+                try {
+                  await unlock.mutateAsync(sam);
+                  toast.success("Account unlocked");
+                } catch (error: unknown) {
+                  notifyActionError(error, {
+                    fallback: "Failed to unlock account",
+                    cancelled: "Unlock cancelled",
+                  });
+                }
+              }}
+            />
             <ActionButton
               icon={KeyRound} label="Reset PW" variant="primary"
               onClick={() => setShowResetPw(!showResetPw)}
