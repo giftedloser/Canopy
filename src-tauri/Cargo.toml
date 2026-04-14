@@ -1,6 +1,6 @@
 [package]
 name = "canopy"
-version = "1.0.0-1"
+version = "1.0.0"
 description = "Windows-native Active Directory management desktop app built with Tauri, React, and Rust."
 authors = ["Canopy contributors"]
 edition = "2021"

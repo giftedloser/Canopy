@@ -34,12 +34,11 @@ git push origin v<version>
 7. Draft or publish the GitHub release using the generated installer assets from `src-tauri/target/release/bundle/`.
 8. Verify the release title, notes, and installer names all reflect the current Canopy version.
 
-## Release Candidate Notes
+## Prerelease Notes
 
 - For MSI targets, use numeric prerelease identifiers such as `1.0.0-1`
-- Call the release `RC1` in release titles or notes if you want friendlier external wording
-- Mark GitHub releases as prereleases when appropriate
-- Keep repository visibility and distribution scope aligned with the current testing phase
+- Call prerelease builds `RC1`, `RC2`, and so on in release titles or notes if you want friendlier external wording
+- Mark GitHub prereleases explicitly before public GA
 
 ## Suggested Release Notes Sections
 

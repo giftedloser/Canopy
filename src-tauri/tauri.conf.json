@@ -1,6 +1,6 @@
 {
   "productName": "Canopy",
-  "version": "1.0.0-1",
+  "version": "1.0.0",
   "identifier": "com.fuzzy-forest.app",
   "build": {
     "frontendDist": "../dist",
