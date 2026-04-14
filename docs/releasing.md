@@ -36,7 +36,8 @@ git push origin v<version>
 
 ## Release Candidate Notes
 
-- Use semver prerelease identifiers such as `1.0.0-rc.1`
+- For MSI targets, use numeric prerelease identifiers such as `1.0.0-1`
+- Call the release `RC1` in release titles or notes if you want friendlier external wording
 - Mark GitHub releases as prereleases when appropriate
 - Keep repository visibility and distribution scope aligned with the current testing phase
 
