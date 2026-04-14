@@ -21,18 +21,24 @@ npm run tauri:build
 5. Create an annotated tag:
 
 ```bash
-git tag -a v0.1.6 -m "Release v0.1.6"
+git tag -a v<version> -m "Release v<version>"
 ```
 
 6. Push the branch and tag:
 
 ```bash
 git push origin main
-git push origin v0.1.6
+git push origin v<version>
 ```
 
 7. Draft or publish the GitHub release using the generated installer assets from `src-tauri/target/release/bundle/`.
 8. Verify the release title, notes, and installer names all reflect the current Canopy version.
+
+## Release Candidate Notes
+
+- Use semver prerelease identifiers such as `1.0.0-rc.1`
+- Mark GitHub releases as prereleases when appropriate
+- Keep repository visibility and distribution scope aligned with the current testing phase
 
 ## Suggested Release Notes Sections
 

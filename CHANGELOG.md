@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.0-rc.1] - 2026-04-14
+
+### Added
+- Added a troubleshooting guide covering RSAT, WebView2, connection failures, elevation prompts, and refresh guidance for live AD testing
+
+### Changed
+- Promoted the application metadata and installer versioning to `1.0.0-rc.1`
+- Tightened release documentation so version bumps, lockfiles, and RC handling are documented consistently
+
+### Fixed
+- Aligned architecture, security, and README language with the current bounded cache behavior and connection-scoped persistence model
+
 ## [0.1.6] - 2026-04-12
 
 ### Changed

@@ -142,6 +142,7 @@ Read more in [docs/security-model.md](docs/security-model.md) and [SECURITY.md](
 - [Architecture](docs/architecture.md)
 - [Development Guide](docs/development.md)
 - [Security Model](docs/security-model.md)
+- [Troubleshooting](docs/troubleshooting.md)
 - [Release Process](docs/releasing.md)
 - [Contributing](CONTRIBUTING.md)
 
