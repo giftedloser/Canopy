@@ -8,6 +8,7 @@ import { ElevationDialog } from "@/components/credentials/elevation-dialog";
 import { SearchCommand } from "@/components/shared/search-command";
 import { testConnection } from "@/lib/tauri-ad";
 import { normalizeConnectionPayload } from "@/lib/connection-response";
+import { formatErrorMessage } from "@/lib/feedback";
 import {
   closeAppWindow,
   getWindowMaximizedState,
@@ -225,9 +226,7 @@ export function AppLayout() {
                     );
                     toast.success("Page refreshed");
                   } catch (error: unknown) {
-                    toast.error(
-                      error instanceof Error ? error.message : "Refresh failed"
-                    );
+                    toast.error(formatErrorMessage(error, "Refresh failed"));
                   } finally {
                     setIsRefreshing(false);
                   }

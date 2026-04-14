@@ -3,6 +3,7 @@ import { Loader2, Search, FolderTree, Users as UsersIcon } from "lucide-react";
 import { cn, getOUFromDN } from "@/lib/utils";
 import { useGroupLookup } from "@/hooks/use-ad-groups";
 import { useOuTree } from "@/hooks/use-ad-directory";
+import { formatErrorMessage } from "@/lib/feedback";
 
 function getParentDn(dn?: string | null) {
   if (!dn) return null;
@@ -133,7 +134,9 @@ export function MoveToOuDialog({
                 <Loader2 className="w-4 h-4 animate-spin" />
               </div>
             ) : error ? (
-              <div className="px-4 py-6 text-sm text-destructive">Failed to load OUs.</div>
+              <div className="px-4 py-6 text-sm text-destructive">
+                {formatErrorMessage(error, "Failed to load OUs")}
+              </div>
             ) : filtered.length === 0 ? (
               <div className="px-4 py-6 text-sm text-muted-foreground">No matching OUs.</div>
             ) : (

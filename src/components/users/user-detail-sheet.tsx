@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { cn, formatDate, formatDateTime, getOUFromDN } from "@/lib/utils";
 import { useUserDetail, useUserGroups, useUnlockUser, useToggleUser, useResetPassword } from "@/hooks/use-ad-users";
-import { isElevationCancelledError } from "@/lib/tauri-ad";
+import { formatErrorMessage, notifyActionError } from "@/lib/feedback";
 import { toast } from "sonner";
 import {
   X,
@@ -102,9 +102,11 @@ export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
                   try {
                     await unlock.mutateAsync(sam);
                     toast.success("Account unlocked");
-                  } catch (e: any) {
-                    if (isElevationCancelledError(e)) { toast.message("Cancelled."); return; }
-                    toast.error(e?.toString());
+                  } catch (error: unknown) {
+                    notifyActionError(error, {
+                      fallback: "Failed to unlock account",
+                      cancelled: "Unlock cancelled",
+                    });
                   }
                 }}
               />
@@ -122,9 +124,11 @@ export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
                 try {
                   await toggle.mutateAsync({ sam, enable: !user.Enabled });
                   toast.success(user.Enabled ? "Account disabled" : "Account enabled");
-                } catch (e: any) {
-                  if (isElevationCancelledError(e)) { toast.message("Cancelled."); return; }
-                  toast.error(e?.toString());
+                } catch (error: unknown) {
+                  notifyActionError(error, {
+                    fallback: "Failed to update account",
+                    cancelled: "Account update cancelled",
+                  });
                 }
               }}
             />
@@ -156,12 +160,14 @@ export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
                   if (!newPassword) return;
                   try {
                     await resetPw.mutateAsync({ samAccountName: sam, newPassword });
-                    toast.success("Password reset successfully.");
+                    toast.success("Password reset successfully");
                     setNewPassword("");
                     setShowResetPw(false);
-                  } catch (e: any) {
-                    if (isElevationCancelledError(e)) { toast.message("Cancelled."); return; }
-                    toast.error(e?.toString());
+                  } catch (error: unknown) {
+                    notifyActionError(error, {
+                      fallback: "Failed to reset password",
+                      cancelled: "Password reset cancelled",
+                    });
                   }
                 }}
                 disabled={resetPw.isPending}
@@ -209,7 +215,7 @@ export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
               <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3">
                 <p className="text-sm font-semibold text-destructive">Failed to load user details</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {error instanceof Error ? error.message : "Unknown error"}
+                  {formatErrorMessage(error, "Unknown error")}
                 </p>
               </div>
             </div>

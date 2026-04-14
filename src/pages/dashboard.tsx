@@ -6,7 +6,7 @@ import { useOuScopeStore } from "@/stores/ou-scope-store";
 import { useDashboardStats } from "@/hooks/use-ad-reports";
 import { useGroupMembers } from "@/hooks/use-ad-groups";
 import { useUnlockUser, useResetPassword } from "@/hooks/use-ad-users";
-import { isElevationCancelledError } from "@/lib/tauri-ad";
+import { formatErrorMessage, notifyActionError } from "@/lib/feedback";
 import { toast } from "sonner";
 import {
   Users,
@@ -99,7 +99,7 @@ export default function Dashboard() {
       {isLoading ? (
         <SkeletonGrid />
       ) : error ? (
-        <ErrorBanner message={error instanceof Error ? error.message : "Unknown error"} />
+        <ErrorBanner message={formatErrorMessage(error, "Unknown error")} />
       ) : (
         <StatsSection
           stats={stats}
@@ -509,9 +509,11 @@ function QuickUnlockCard() {
       await unlock.mutateAsync(sam.trim());
       toast.success(`Account "${sam}" unlocked`);
       setSam("");
-    } catch (err: any) {
-      if (isElevationCancelledError(err)) { toast.message("Unlock cancelled."); return; }
-      toast.error(err?.toString() || "Failed to unlock");
+    } catch (error: unknown) {
+      notifyActionError(error, {
+        fallback: "Failed to unlock account",
+        cancelled: "Unlock cancelled",
+      });
     }
   };
 
@@ -566,9 +568,11 @@ function QuickResetPasswordCard() {
       await reset.mutateAsync({ samAccountName: sam.trim(), newPassword: newPw.trim() });
       toast.success(`Password reset for "${sam}"`);
       setSam(""); setNewPw("");
-    } catch (err: any) {
-      if (isElevationCancelledError(err)) { toast.message("Reset cancelled."); return; }
-      toast.error(err?.toString() || "Failed to reset password");
+    } catch (error: unknown) {
+      notifyActionError(error, {
+        fallback: "Failed to reset password",
+        cancelled: "Password reset cancelled",
+      });
     }
   };
 

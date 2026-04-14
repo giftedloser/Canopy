@@ -5,6 +5,7 @@ import { useCredentialStore } from "@/stores/credential-store";
 import { useOuScopeStore } from "@/stores/ou-scope-store";
 import { useReport } from "@/hooks/use-ad-reports";
 import { runReport } from "@/lib/tauri-ad";
+import { formatErrorMessage } from "@/lib/feedback";
 import { toast } from "sonner";
 import {
   FileBarChart,
@@ -321,7 +322,7 @@ export default function ReportsPage() {
           id: report.id,
           title: report.title,
           resultCount: 0,
-          error: error instanceof Error ? error.message : String(error),
+          error: formatErrorMessage(error, "Unknown error"),
         };
       }
     });
@@ -532,7 +533,7 @@ function ReportViewer({ report, onBack }: { report: ReportDef; onBack: () => voi
               <div className="min-w-0">
                 <p className="text-sm font-semibold">Report failed</p>
                 <p className="text-xs text-muted-foreground mt-1 break-words">
-                  {error instanceof Error ? error.message : "Unknown error"}
+                  {formatErrorMessage(error, "Unknown error")}
                 </p>
                 <div className="mt-3">
                   <button

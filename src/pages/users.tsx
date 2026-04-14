@@ -15,7 +15,7 @@ import {
 import { useResizablePercentColumns } from "@/hooks/use-resizable-columns";
 import { PaginationBar } from "@/components/shared/pagination-bar";
 import { AppContextMenu, ContextMenuItem, getContextMenuPositionForElement } from "@/components/shared/context-menu";
-import { isElevationCancelledError } from "@/lib/tauri-ad";
+import { formatErrorMessage, notifyActionError } from "@/lib/feedback";
 import { UserDetailSheet } from "@/components/users/user-detail-sheet";
 import { GroupPickerDialog, MoveToOuDialog } from "@/components/shared/object-action-dialogs";
 import { toast } from "sonner";
@@ -219,9 +219,9 @@ export default function UsersPage() {
         ) : error ? (
           <div className="flex items-center gap-3 p-4 m-4 rounded-xl border border-destructive/20 bg-destructive/5">
             <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
-            <div>
+              <div>
               <p className="text-sm font-semibold">Failed to load users</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{error instanceof Error ? error.message : "Unknown"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{formatErrorMessage(error, "Unknown error")}</p>
             </div>
           </div>
         ) : users.length === 0 ? (
@@ -414,11 +414,14 @@ export default function UsersPage() {
                   try {
                     await unlock.mutateAsync(contextMenu.sam);
                     toast.success("Account unlocked");
-                  } catch (e: any) {
-                    if (isElevationCancelledError(e)) { toast.message("Unlock cancelled."); return; }
-                    toast.error(e?.toString());
+                  } catch (error: unknown) {
+                    notifyActionError(error, {
+                      fallback: "Failed to unlock account",
+                      cancelled: "Unlock cancelled",
+                    });
+                  } finally {
+                    setContextMenu(null);
                   }
-                  setContextMenu(null);
                 }}
               />
             )}
@@ -438,11 +441,14 @@ export default function UsersPage() {
                 try {
                   await toggle.mutateAsync({ sam: contextMenu.sam, enable: !contextMenu.enabled });
                   toast.success(contextMenu.enabled ? "Account disabled" : "Account enabled");
-                } catch (e: any) {
-                  if (isElevationCancelledError(e)) { toast.message("Update cancelled."); return; }
-                  toast.error(e?.toString());
+                } catch (error: unknown) {
+                  notifyActionError(error, {
+                    fallback: "Failed to update account",
+                    cancelled: "Account update cancelled",
+                  });
+                } finally {
+                  setContextMenu(null);
                 }
-                setContextMenu(null);
               }}
             />
             <ContextMenuItem
@@ -466,11 +472,13 @@ export default function UsersPage() {
           onConfirm={async (newPassword) => {
             try {
               await resetPassword.mutateAsync({ samAccountName: resetPasswordSam, newPassword });
-              toast.success("Password reset successfully.");
+              toast.success("Password reset successfully");
               setResetPasswordSam(null);
-            } catch (e: any) {
-              if (isElevationCancelledError(e)) { toast.message("Cancelled."); return; }
-              toast.error(e?.toString() || "Failed to reset password");
+            } catch (error: unknown) {
+              notifyActionError(error, {
+                fallback: "Failed to reset password",
+                cancelled: "Password reset cancelled",
+              });
             }
           }}
         />
@@ -485,9 +493,11 @@ export default function UsersPage() {
               await addToGroup.mutateAsync({ sam: addToGroupSam, groupName });
               toast.success(`Added ${addToGroupSam} to ${groupName}`);
               setAddToGroupSam(null);
-            } catch (e: any) {
-              if (isElevationCancelledError(e)) { toast.message("Cancelled."); return; }
-              toast.error(e?.toString() || "Failed to add to group");
+            } catch (error: unknown) {
+              notifyActionError(error, {
+                fallback: "Failed to add user to group",
+                cancelled: "Add to group cancelled",
+              });
             }
           }}
         />
@@ -503,9 +513,11 @@ export default function UsersPage() {
               await moveUser.mutateAsync({ sam: moveUserState.sam, targetOu });
               toast.success("User moved successfully");
               setMoveUserState(null);
-            } catch (e: any) {
-              if (isElevationCancelledError(e)) { toast.message("Cancelled."); return; }
-              toast.error(e?.toString() || "Failed to move user");
+            } catch (error: unknown) {
+              notifyActionError(error, {
+                fallback: "Failed to move user",
+                cancelled: "Move cancelled",
+              });
             }
           }}
         />
@@ -653,9 +665,11 @@ function CreateUserDialog({ onClose }: { onClose: () => void }) {
       });
       toast.success("User created successfully");
       onClose();
-    } catch (e: any) {
-      if (isElevationCancelledError(e)) { toast.message("Creation cancelled."); return; }
-      toast.error(e?.toString() || "Failed to create user");
+    } catch (error: unknown) {
+      notifyActionError(error, {
+        fallback: "Failed to create user",
+        cancelled: "User creation cancelled",
+      });
     }
   };
 

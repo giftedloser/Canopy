@@ -6,7 +6,7 @@ import { useComputers, useComputerDetail, useComputerGroups, useToggleComputer, 
 import { useResizablePercentColumns } from "@/hooks/use-resizable-columns";
 import { PaginationBar } from "@/components/shared/pagination-bar";
 import { AppContextMenu, ContextMenuItem, getContextMenuPositionForElement } from "@/components/shared/context-menu";
-import { isElevationCancelledError } from "@/lib/tauri-ad";
+import { formatErrorMessage, notifyActionError } from "@/lib/feedback";
 import { MoveToOuDialog } from "@/components/shared/object-action-dialogs";
 import { toast } from "sonner";
 import {
@@ -163,9 +163,9 @@ export default function ComputersPage() {
         ) : error ? (
           <div className="flex items-center gap-3 p-4 m-4 rounded-xl border border-destructive/20 bg-destructive/5">
             <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
-            <div>
+              <div>
               <p className="text-sm font-semibold">Failed to load computers</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{error instanceof Error ? error.message : "Unknown"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{formatErrorMessage(error, "Unknown error")}</p>
             </div>
           </div>
         ) : computers.length === 0 ? (
@@ -370,11 +370,14 @@ export default function ComputersPage() {
                 try {
                   await toggle.mutateAsync({ name: contextMenu.name, enable: !contextMenu.enabled });
                   toast.success(contextMenu.enabled ? "Computer disabled" : "Computer enabled");
-                } catch (e: any) {
-                  if (isElevationCancelledError(e)) { toast.message("Update cancelled."); return; }
-                  toast.error(e?.toString() || "Failed to update computer");
+                } catch (error: unknown) {
+                  notifyActionError(error, {
+                    fallback: "Failed to update computer",
+                    cancelled: "Computer update cancelled",
+                  });
+                } finally {
+                  setContextMenu(null);
                 }
-                setContextMenu(null);
               }}
             />
             <ContextMenuItem
@@ -398,9 +401,11 @@ export default function ComputersPage() {
               await moveComputer.mutateAsync({ name: moveComputerState.name, targetOu });
               toast.success("Computer moved successfully");
               setMoveComputerState(null);
-            } catch (e: any) {
-              if (isElevationCancelledError(e)) { toast.message("Update cancelled."); return; }
-              toast.error(e?.toString() || "Failed to move computer");
+            } catch (error: unknown) {
+              notifyActionError(error, {
+                fallback: "Failed to move computer",
+                cancelled: "Move cancelled",
+              });
             }
           }}
         />
@@ -458,9 +463,11 @@ function ComputerDetailSheet({ name, onClose }: { name: string; onClose: () => v
                 try {
                   await toggle.mutateAsync({ name, enable: !comp.Enabled });
                   toast.success(comp.Enabled ? "Computer disabled" : "Computer enabled");
-                } catch (e: any) {
-                  if (isElevationCancelledError(e)) { toast.message("Update cancelled."); return; }
-                  toast.error(e?.toString());
+                } catch (error: unknown) {
+                  notifyActionError(error, {
+                    fallback: "Failed to update computer",
+                    cancelled: "Computer update cancelled",
+                  });
                 }
               }}
               disabled={toggle.isPending}
@@ -510,7 +517,7 @@ function ComputerDetailSheet({ name, onClose }: { name: string; onClose: () => v
               <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3">
                 <p className="text-sm font-semibold text-destructive">Failed to load computer details</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {error instanceof Error ? error.message : "Unknown error"}
+                  {formatErrorMessage(error, "Unknown error")}
                 </p>
               </div>
             </div>

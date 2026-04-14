@@ -5,7 +5,7 @@ import { useCredentialStore } from "@/stores/credential-store";
 import { useGroups, useGroupMembers, useAddGroupMember, useRemoveGroupMember, useCreateGroup, useGroupMemberCounts } from "@/hooks/use-ad-groups";
 import { PaginationBar } from "@/components/shared/pagination-bar";
 import { AppContextMenu, ContextMenuItem, getContextMenuPositionForElement } from "@/components/shared/context-menu";
-import { isElevationCancelledError } from "@/lib/tauri-ad";
+import { formatErrorMessage, notifyActionError } from "@/lib/feedback";
 import { toast } from "sonner";
 import {
   Search,
@@ -172,9 +172,9 @@ export default function GroupsPage() {
         ) : error ? (
           <div className="flex items-center gap-3 p-4 m-4 rounded-xl border border-destructive/20 bg-destructive/5">
             <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
-            <div>
+              <div>
               <p className="text-sm font-semibold">Failed to load groups</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{error instanceof Error ? error.message : "Unknown"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{formatErrorMessage(error, "Unknown error")}</p>
             </div>
           </div>
         ) : groupsWithCounts.length === 0 ? (
@@ -367,9 +367,11 @@ function GroupDetailSheet({
       await addMember.mutateAsync({ groupName: name, memberSam: newMemberSam.trim() });
       toast.success(`Added ${newMemberSam} to ${name}`);
       setNewMemberSam("");
-    } catch (err: any) {
-      if (isElevationCancelledError(err)) { toast.message("Add member cancelled."); return; }
-      toast.error(err?.toString());
+    } catch (error: unknown) {
+      notifyActionError(error, {
+        fallback: "Failed to add group member",
+        cancelled: "Add member cancelled",
+      });
     }
   };
 
@@ -455,14 +457,16 @@ function GroupDetailSheet({
                   <span className="text-[10px] text-muted-foreground/50 capitalize shrink-0">{m.ObjectClass}</span>
                   <button
                     onClick={async () => {
-                      try {
-                        await removeMember.mutateAsync({ groupName: name, memberSam: m.SamAccountName });
-                        toast.success(`Removed ${m.SamAccountName}`);
-                      } catch (err: any) {
-                        if (isElevationCancelledError(err)) { toast.message("Remove cancelled."); return; }
-                        toast.error(err?.toString());
-                      }
-                    }}
+                    try {
+                      await removeMember.mutateAsync({ groupName: name, memberSam: m.SamAccountName });
+                      toast.success(`Removed ${m.SamAccountName}`);
+                    } catch (error: unknown) {
+                      notifyActionError(error, {
+                        fallback: "Failed to remove group member",
+                        cancelled: "Remove member cancelled",
+                      });
+                    }
+                  }}
                     className="opacity-0 group-hover:opacity-100 p-1 rounded text-destructive/50 hover:text-destructive hover:bg-destructive/10 transition-all"
                   >
                     <UserMinus className="w-3.5 h-3.5" />
@@ -499,9 +503,11 @@ function CreateGroupDialog({ onClose }: { onClose: () => void }) {
       });
       toast.success("Group created");
       onClose();
-    } catch (e: any) {
-      if (isElevationCancelledError(e)) { toast.message("Creation cancelled."); return; }
-      toast.error(e?.toString());
+    } catch (error: unknown) {
+      notifyActionError(error, {
+        fallback: "Failed to create group",
+        cancelled: "Group creation cancelled",
+      });
     }
   };
 

@@ -12,6 +12,7 @@ import {
   getPreferredElevationUsername,
   setPreferredElevationUsername,
 } from "@/lib/tauri-ad";
+import { formatErrorMessage } from "@/lib/feedback";
 import { buildOuTree, type OuTreeNode } from "@/lib/ou-tree";
 import { parseAdJsonArray } from "@/lib/utils";
 import { toast } from "sonner";
@@ -64,7 +65,7 @@ function LaunchAtStartupSection() {
         }
       } catch (err: any) {
         if (!cancelled) {
-          toast.error(err?.message || "Failed to load startup setting");
+          toast.error(formatErrorMessage(err, "Failed to load startup setting"));
         }
       } finally {
         if (!cancelled) {
@@ -91,7 +92,7 @@ function LaunchAtStartupSection() {
         toast.success("Launch at startup enabled");
       }
     } catch (err: any) {
-      toast.error(err?.message || "Failed to update startup setting");
+      toast.error(formatErrorMessage(err, "Failed to update startup setting"));
     } finally {
       setSaving(false);
     }
@@ -258,7 +259,7 @@ function OuScopeSection() {
         const built = buildOuTree(flat);
         setTree(built);
       } catch (err: any) {
-        setError(err?.message || "Failed to load OU tree");
+        setError(formatErrorMessage(err, "Failed to load OU tree"));
       } finally {
         setLoading(false);
       }
