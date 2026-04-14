@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn, formatDate, formatDateTime, getOUFromDN } from "@/lib/utils";
 import { useUserDetail, useUserGroups, useUnlockUser, useToggleUser, useResetPassword } from "@/hooks/use-ad-users";
+import { useRemoveGroupMember } from "@/hooks/use-ad-groups";
 import { formatErrorMessage, notifyActionError } from "@/lib/feedback";
+import { AppContextMenu, ContextMenuItem, getContextMenuPositionForElement } from "@/components/shared/context-menu";
 import { toast } from "sonner";
 import {
   X,
@@ -21,6 +24,7 @@ import {
   Loader2,
   Copy,
   Check,
+  UserMinus,
 } from "lucide-react";
 
 interface UserDetailSheetProps {
@@ -29,20 +33,48 @@ interface UserDetailSheetProps {
 }
 
 export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
+  const queryClient = useQueryClient();
   const { data, isLoading, error } = useUserDetail(sam);
   const [tab, setTab]               = useState<"details" | "groups" | "attributes">("details");
   const groupsQuery = useUserGroups(sam, tab === "groups");
   const [showResetPw, setShowResetPw] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [groupContextMenu, setGroupContextMenu] = useState<{
+    x: number;
+    y: number;
+    groupName: string;
+    groupLabel: string;
+  } | null>(null);
   const unlock  = useUnlockUser();
   const toggle  = useToggleUser();
   const resetPw = useResetPassword();
+  const removeGroupMember = useRemoveGroupMember();
 
   if (!sam) return null;
 
   const user   = data?.user;
   const groups = normalizeUserGroups(groupsQuery.data, data);
   const attributes = getPopulatedAttributes(user);
+
+  const openGroupContextMenu = (
+    position: { x: number; y: number },
+    group: DirectoryGroup
+  ) => {
+    setGroupContextMenu({
+      x: position.x,
+      y: position.y,
+      groupName: group.SamAccountName || group.Name,
+      groupLabel: group.Name,
+    });
+  };
+
+  const invalidateUserMembershipQueries = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["user-detail", sam] }),
+      queryClient.invalidateQueries({ queryKey: ["user-groups", sam] }),
+      queryClient.invalidateQueries({ queryKey: ["users-snapshot"] }),
+    ]);
+  };
 
   const initials = (user?.DisplayName || user?.Name || sam)
     .split(" ")
@@ -263,7 +295,24 @@ export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
                 groups.map((group) => (
                   <div
                     key={group.DistinguishedName || group.SamAccountName || group.Name}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors"
+                    onContextMenu={(event) => {
+                      event.preventDefault();
+                      openGroupContextMenu(
+                        { x: event.clientX, y: event.clientY },
+                        group
+                      );
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+                        event.preventDefault();
+                        openGroupContextMenu(
+                          getContextMenuPositionForElement(event.currentTarget),
+                          group
+                        );
+                      }
+                    }}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary/50 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+                    tabIndex={0}
                   >
                     <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 shrink-0">
                       <ShieldCheck className="w-3.5 h-3.5 text-primary" />
@@ -283,6 +332,35 @@ export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
           )}
         </div>
       </div>
+      {groupContextMenu && (
+        <AppContextMenu
+          position={groupContextMenu}
+          onClose={() => setGroupContextMenu(null)}
+        >
+          <ContextMenuItem
+            icon={UserMinus}
+            label={`Remove from ${groupContextMenu.groupLabel}`}
+            destructive
+            onClick={async () => {
+              try {
+                await removeGroupMember.mutateAsync({
+                  groupName: groupContextMenu.groupName,
+                  memberSam: sam,
+                });
+                await invalidateUserMembershipQueries();
+                toast.success(`Removed ${sam} from ${groupContextMenu.groupLabel}`);
+              } catch (error: unknown) {
+                notifyActionError(error, {
+                  fallback: "Failed to remove user from group",
+                  cancelled: "Group removal cancelled",
+                });
+              } finally {
+                setGroupContextMenu(null);
+              }
+            }}
+          />
+        </AppContextMenu>
+      )}
     </>
   );
 }
