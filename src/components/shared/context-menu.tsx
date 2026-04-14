@@ -6,6 +6,14 @@ type ContextMenuPosition = {
   y: number;
 };
 
+export function getContextMenuPositionForElement(element: HTMLElement) {
+  const rect = element.getBoundingClientRect();
+  return {
+    x: rect.left + Math.min(rect.width / 2, 120),
+    y: rect.top + Math.min(rect.height / 2, 24),
+  };
+}
+
 interface AppContextMenuProps {
   position: ContextMenuPosition | null;
   onClose: () => void;

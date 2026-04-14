@@ -5,7 +5,7 @@ import { useCredentialStore } from "@/stores/credential-store";
 import { useComputers, useComputerDetail, useComputerGroups, useToggleComputer, useMoveComputer } from "@/hooks/use-ad-computers";
 import { useResizablePercentColumns } from "@/hooks/use-resizable-columns";
 import { PaginationBar } from "@/components/shared/pagination-bar";
-import { AppContextMenu, ContextMenuItem } from "@/components/shared/context-menu";
+import { AppContextMenu, ContextMenuItem, getContextMenuPositionForElement } from "@/components/shared/context-menu";
 import { isElevationCancelledError } from "@/lib/tauri-ad";
 import { MoveToOuDialog } from "@/components/shared/object-action-dialogs";
 import { toast } from "sonner";
@@ -76,6 +76,17 @@ export default function ComputersPage() {
   const totalComputers = data?.total ?? 0;
   const pageCount = data?.pageCount ?? 0;
   const shouldAnimateRows = computers.length <= 120;
+
+  const openContextMenu = (
+    position: { x: number; y: number },
+    payload: { name: string; enabled: boolean; dn?: string | null }
+  ) => {
+    setContextMenu({
+      x: position.x,
+      y: position.y,
+      ...payload,
+    });
+  };
 
   const handleSort = (key: SortKey) => {
     setPage(1);
@@ -230,20 +241,35 @@ export default function ComputersPage() {
                   <tr
                     key={comp.Name || i}
                     onClick={() => setSelectedComputer(comp.Name)}
-                    onContextMenu={(e) => {
-                      e.preventDefault();
-                      setContextMenu({
-                        x: e.clientX,
-                        y: e.clientY,
-                        name: comp.Name,
-                        enabled: comp.Enabled,
-                        dn: comp.DistinguishedName,
-                      });
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                      openContextMenu(
+                        { x: e.clientX, y: e.clientY },
+                        {
+                          name: comp.Name,
+                          enabled: comp.Enabled,
+                          dn: comp.DistinguishedName,
+                        }
+                      );
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "ContextMenu" || (e.shiftKey && e.key === "F10")) {
+                        e.preventDefault();
+                        openContextMenu(
+                          getContextMenuPositionForElement(e.currentTarget),
+                          {
+                            name: comp.Name,
+                            enabled: comp.Enabled,
+                            dn: comp.DistinguishedName,
+                          }
+                        );
+                      }
                     }}
                     className={cn(
                       "table-row-hover border-b border-border/40 hover:bg-secondary/25 cursor-pointer",
                       shouldAnimateRows && "table-row-animate"
                     )}
+                    tabIndex={0}
                     style={shouldAnimateRows ? { animationDelay: `${Math.min(i * 12, 250)}ms` } : undefined}
                   >
                     <td className="px-4">
@@ -289,14 +315,16 @@ export default function ComputersPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setContextMenu({
-                            x: e.clientX,
-                            y: e.clientY,
-                            name: comp.Name,
-                            enabled: comp.Enabled,
-                            dn: comp.DistinguishedName,
-                          });
+                          openContextMenu(
+                            { x: e.clientX, y: e.clientY },
+                            {
+                              name: comp.Name,
+                              enabled: comp.Enabled,
+                              dn: comp.DistinguishedName,
+                            }
+                          );
                         }}
+                        aria-label={`Open actions for ${comp.Name}`}
                         className="p-1 rounded text-muted-foreground/30 hover:text-muted-foreground hover:bg-secondary transition-colors"
                       >
                         <MoreHorizontal className="w-4 h-4" />

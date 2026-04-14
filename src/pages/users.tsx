@@ -14,7 +14,7 @@ import {
 } from "@/hooks/use-ad-users";
 import { useResizablePercentColumns } from "@/hooks/use-resizable-columns";
 import { PaginationBar } from "@/components/shared/pagination-bar";
-import { AppContextMenu, ContextMenuItem } from "@/components/shared/context-menu";
+import { AppContextMenu, ContextMenuItem, getContextMenuPositionForElement } from "@/components/shared/context-menu";
 import { isElevationCancelledError } from "@/lib/tauri-ad";
 import { UserDetailSheet } from "@/components/users/user-detail-sheet";
 import { GroupPickerDialog, MoveToOuDialog } from "@/components/shared/object-action-dialogs";
@@ -96,6 +96,17 @@ export default function UsersPage() {
   const totalUsers = data?.total ?? 0;
   const pageCount = data?.pageCount ?? 0;
   const shouldAnimateRows = users.length <= 120;
+
+  const openContextMenu = (
+    position: { x: number; y: number },
+    payload: { sam: string; enabled: boolean; locked: boolean; dn?: string | null }
+  ) => {
+    setContextMenu({
+      x: position.x,
+      y: position.y,
+      ...payload,
+    });
+  };
 
   const handleSort = (key: SortKey) => {
     setPage(1);
@@ -280,19 +291,35 @@ export default function UsersPage() {
                   onClick={() => setSelectedSam(user.SamAccountName)}
                   onContextMenu={(e) => {
                     e.preventDefault();
-                    setContextMenu({
-                      x: e.clientX,
-                      y: e.clientY,
-                      sam: user.SamAccountName,
-                      enabled: user.Enabled,
-                      locked: user.LockedOut,
-                      dn: user.DistinguishedName,
-                    });
+                    openContextMenu(
+                      { x: e.clientX, y: e.clientY },
+                      {
+                        sam: user.SamAccountName,
+                        enabled: user.Enabled,
+                        locked: user.LockedOut,
+                        dn: user.DistinguishedName,
+                      }
+                    );
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ContextMenu" || (e.shiftKey && e.key === "F10")) {
+                      e.preventDefault();
+                      openContextMenu(
+                        getContextMenuPositionForElement(e.currentTarget),
+                        {
+                          sam: user.SamAccountName,
+                          enabled: user.Enabled,
+                          locked: user.LockedOut,
+                          dn: user.DistinguishedName,
+                        }
+                      );
+                    }
                   }}
                   className={cn(
                     "table-row-hover border-b border-border/40 hover:bg-secondary/25 cursor-pointer",
                     shouldAnimateRows && "table-row-animate"
                   )}
+                  tabIndex={0}
                   style={shouldAnimateRows ? { animationDelay: `${Math.min(i * 12, 250)}ms` } : undefined}
                 >
                   {/* Name + Avatar */}
@@ -333,15 +360,17 @@ export default function UsersPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setContextMenu({
-                          x: e.clientX,
-                          y: e.clientY,
-                          sam: user.SamAccountName,
-                          enabled: user.Enabled,
-                          locked: user.LockedOut,
-                          dn: user.DistinguishedName,
-                        });
+                        openContextMenu(
+                          { x: e.clientX, y: e.clientY },
+                          {
+                            sam: user.SamAccountName,
+                            enabled: user.Enabled,
+                            locked: user.LockedOut,
+                            dn: user.DistinguishedName,
+                          }
+                        );
                       }}
+                      aria-label={`Open actions for ${user.DisplayName || user.Name || user.SamAccountName}`}
                       className="p-1 rounded text-muted-foreground/30 hover:text-muted-foreground hover:bg-secondary transition-colors"
                     >
                       <MoreHorizontal className="w-4 h-4" />

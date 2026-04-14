@@ -449,9 +449,17 @@ export default function ReportsPage() {
 
 /* ─── Report viewer ──────────────────────────────────────────── */
 function ReportViewer({ report, onBack }: { report: ReportDef; onBack: () => void }) {
-  const { data = [], isLoading, error } = useReport(report.id);
+  const { data = [], isLoading, isFetching, error, refetch, dataUpdatedAt } = useReport(report.id);
   const columns = data.length > 0 ? Object.keys(data[0]) : [];
   const shouldAnimateRows = data.length <= 150;
+  const lastUpdatedLabel = dataUpdatedAt
+    ? new Date(dataUpdatedAt).toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : null;
 
   return (
     <div className="flex flex-col h-full animate-[fade-in_0.25s_ease-out]">
@@ -472,19 +480,42 @@ function ReportViewer({ report, onBack }: { report: ReportDef; onBack: () => voi
             <p className="text-[11px] text-muted-foreground">{report.description}</p>
           </div>
           {!isLoading && (
-            <span className="ml-1 text-[11px] font-mono text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-md">
-              {data.length} results
-            </span>
+            <div className="ml-1 flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-mono text-muted-foreground bg-secondary px-1.5 py-0.5 rounded-md">
+                {data.length} results
+              </span>
+              {lastUpdatedLabel && (
+                <span className="text-[11px] text-muted-foreground bg-secondary/60 px-1.5 py-0.5 rounded-md">
+                  Updated {lastUpdatedLabel}
+                </span>
+              )}
+              {isFetching && (
+                <span className="inline-flex items-center gap-1 rounded-md border border-border bg-secondary px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  Refreshing
+                </span>
+              )}
+            </div>
           )}
         </div>
-        <button
-          onClick={() => exportToCSV(data, `report-${report.id}`)}
-          disabled={data.length === 0}
-          className="flex items-center gap-1.5 h-8 px-3 rounded-md border border-border text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary disabled:opacity-40 transition-colors"
-        >
-          <Download className="w-3.5 h-3.5" />
-          Export CSV
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => refetch()}
+            disabled={isLoading || isFetching}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-md border border-border text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary disabled:opacity-40 transition-colors"
+          >
+            <Loader2 className={cn("w-3.5 h-3.5", isFetching && "animate-spin")} />
+            Refresh
+          </button>
+          <button
+            onClick={() => exportToCSV(data, `report-${report.id}`)}
+            disabled={data.length === 0}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-md border border-border text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary disabled:opacity-40 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
+        </div>
       </div>
 
       {/* Content */}
@@ -495,9 +526,25 @@ function ReportViewer({ report, onBack }: { report: ReportDef; onBack: () => voi
             <p className="text-sm text-muted-foreground">Running report...</p>
           </div>
         ) : error ? (
-          <div className="flex items-center gap-3 p-4 m-4 rounded-xl border border-destructive/20 bg-destructive/5">
-            <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
-            <p className="text-sm">{error instanceof Error ? error.message : "Report failed"}</p>
+          <div className="m-4 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">Report failed</p>
+                <p className="text-xs text-muted-foreground mt-1 break-words">
+                  {error instanceof Error ? error.message : "Unknown error"}
+                </p>
+                <div className="mt-3">
+                  <button
+                    onClick={() => refetch()}
+                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-destructive/20 px-3 text-[12px] font-medium text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <Loader2 className={cn("w-3.5 h-3.5", isFetching && "animate-spin")} />
+                    Retry Report
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         ) : data.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
@@ -530,7 +577,16 @@ function ReportViewer({ report, onBack }: { report: ReportDef; onBack: () => voi
                   style={shouldAnimateRows ? { animationDelay: `${Math.min(i * 10, 200)}ms` } : undefined}
                 >
                   {columns.map((col) => (
-                    <td key={col} className="px-4 py-2.5 text-[12px] text-muted-foreground whitespace-nowrap">
+                    <td
+                      key={col}
+                      className={cn(
+                        "px-4 py-2.5 text-[12px] text-muted-foreground align-top",
+                        String(row[col] ?? "").length > 48
+                          ? "whitespace-normal break-words"
+                          : "whitespace-nowrap"
+                      )}
+                      title={typeof row[col] === "string" ? row[col] : undefined}
+                    >
                       {typeof row[col] === "boolean"
                         ? row[col] ? "Yes" : "No"
                         : String(row[col] ?? "—")}

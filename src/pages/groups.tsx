@@ -4,7 +4,7 @@ import { cn, exportToCSV } from "@/lib/utils";
 import { useCredentialStore } from "@/stores/credential-store";
 import { useGroups, useGroupMembers, useAddGroupMember, useRemoveGroupMember, useCreateGroup, useGroupMemberCounts } from "@/hooks/use-ad-groups";
 import { PaginationBar } from "@/components/shared/pagination-bar";
-import { AppContextMenu, ContextMenuItem } from "@/components/shared/context-menu";
+import { AppContextMenu, ContextMenuItem, getContextMenuPositionForElement } from "@/components/shared/context-menu";
 import { isElevationCancelledError } from "@/lib/tauri-ad";
 import { toast } from "sonner";
 import {
@@ -76,6 +76,17 @@ export default function GroupsPage() {
   const totalGroups = data?.total ?? 0;
   const pageCount = data?.pageCount ?? 0;
   const shouldAnimateRows = groupsWithCounts.length <= 120;
+
+  const openContextMenu = (
+    position: { x: number; y: number },
+    payload: { name: string }
+  ) => {
+    setContextMenu({
+      x: position.x,
+      y: position.y,
+      ...payload,
+    });
+  };
 
   const handleSort = (key: SortKey) => {
     setPage(1);
@@ -215,12 +226,22 @@ export default function GroupsPage() {
                   onClick={() => setSelectedGroup({ name: group.Name, intent: "view" })}
                   onContextMenu={(e) => {
                     e.preventDefault();
-                    setContextMenu({ x: e.clientX, y: e.clientY, name: group.Name });
+                    openContextMenu({ x: e.clientX, y: e.clientY }, { name: group.Name });
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "ContextMenu" || (e.shiftKey && e.key === "F10")) {
+                      e.preventDefault();
+                      openContextMenu(
+                        getContextMenuPositionForElement(e.currentTarget),
+                        { name: group.Name }
+                      );
+                    }
                   }}
                   className={cn(
                     "table-row-hover border-b border-border/40 hover:bg-secondary/25 cursor-pointer",
                     shouldAnimateRows && "table-row-animate"
                   )}
+                  tabIndex={0}
                   style={shouldAnimateRows ? { animationDelay: `${Math.min(i * 12, 250)}ms` } : undefined}
                 >
                   <td className="px-4">
@@ -259,8 +280,9 @@ export default function GroupsPage() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setContextMenu({ x: e.clientX, y: e.clientY, name: group.Name });
+                        openContextMenu({ x: e.clientX, y: e.clientY }, { name: group.Name });
                       }}
+                      aria-label={`Open actions for ${group.Name}`}
                       className="p-1 rounded text-muted-foreground/30 hover:text-muted-foreground hover:bg-secondary transition-colors"
                     >
                       <MoreHorizontal className="w-4 h-4" />
