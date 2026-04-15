@@ -737,7 +737,7 @@ function QuickResetPasswordCard() {
               className="input-base w-full font-mono"
             />
           </div>
-          <div className="space-y-2">
+          <div>
             <QuickActionFieldLabel>New Password</QuickActionFieldLabel>
             <input
               type="password"
@@ -760,6 +760,11 @@ function QuickResetPasswordCard() {
               data-form-type="other"
               className="input-base w-full"
             />
+          </div>
+        </div>
+        <div className="mt-auto space-y-2">
+          <QuickActionStatusLine message={status.message} tone={status.tone} />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <label className="flex items-start gap-2.5 py-0.5 text-[12px] text-muted-foreground">
               <input
                 type="checkbox"
@@ -769,13 +774,10 @@ function QuickResetPasswordCard() {
               />
               <span>Require password change at next login</span>
             </label>
+            <QuickActionButton onClick={handleReset} disabled={reset.isPending || !normalizedSam || !newPw.trim()} tone="primary">
+              {reset.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Reset Password"}
+            </QuickActionButton>
           </div>
-        </div>
-        <div className="mt-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <QuickActionStatusLine message={status.message} tone={status.tone} />
-          <QuickActionButton onClick={handleReset} disabled={reset.isPending || !normalizedSam || !newPw.trim()} tone="primary">
-            {reset.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Reset Password"}
-          </QuickActionButton>
         </div>
       </div>
     </div>
