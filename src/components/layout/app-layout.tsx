@@ -175,7 +175,7 @@ export function AppLayout() {
             {/* Search button */}
             <button
               onClick={() => setShowSearch(true)}
-              className="group flex items-center gap-2 h-8 px-3 rounded-md border border-border bg-secondary/60 hover:bg-secondary hover:border-primary/30 text-muted-foreground text-[12px] transition-all"
+              className="interactive-control group flex items-center gap-2 h-8 px-3 rounded-md border border-border bg-secondary/60 hover:bg-secondary hover:border-primary/30 text-muted-foreground text-[12px] transition-all hover:shadow-sm"
             >
               <Search className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-primary transition-colors" />
               <span className="hidden sm:inline">Search...</span>

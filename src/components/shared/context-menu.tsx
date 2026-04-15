@@ -110,7 +110,7 @@ export function ContextMenuItem({
       role="menuitem"
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] font-medium transition-colors",
+        "interactive-control flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[12px] font-medium transition-colors active:scale-[0.99]",
         destructive
           ? "text-destructive hover:bg-destructive/10"
           : "text-foreground hover:bg-secondary"

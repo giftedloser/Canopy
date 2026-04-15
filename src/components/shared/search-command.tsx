@@ -334,7 +334,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
                     onClick={() => handleSelect(result)}
                     onMouseEnter={() => setSelected(i)}
                     className={cn(
-                      "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left transition-colors",
+                      "interactive-list-item flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-left transition-colors",
                       selected === i
                         ? "bg-primary/12 text-foreground"
                         : "text-muted-foreground hover:bg-secondary/50"

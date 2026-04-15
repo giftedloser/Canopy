@@ -404,7 +404,7 @@ function StatCard({
   onClick?: () => void;
 }) {
   const cardClassName = cn(
-    "relative overflow-hidden rounded-xl border bg-card p-4 transition-all duration-200 group",
+    "interactive-card relative overflow-hidden rounded-xl border bg-card p-4 transition-all duration-200 group",
     danger
       ? "border-destructive/25 hover:border-destructive/40"
       : "border-border hover:border-border/80",
@@ -519,7 +519,7 @@ function QuickUnlockCard() {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="interactive-card rounded-xl border border-border bg-card p-4">
       <div className="flex items-center gap-3 mb-3">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-warning/10 shrink-0">
           <Unlock className="w-4 h-4 text-warning" />
@@ -588,7 +588,7 @@ function QuickResetPasswordCard() {
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
+    <div className="interactive-card rounded-xl border border-border bg-card p-4">
       <div className="flex items-center gap-3 mb-3">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
           <KeyRound className="w-4 h-4 text-primary" />

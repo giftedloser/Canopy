@@ -426,7 +426,7 @@ export default function ReportsPage() {
                   key={report.id}
                   onClick={() => setSearchParams({ report: report.id })}
                   className={cn(
-                    "group text-left rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:bg-secondary/30 transition-all border-l-[3px]",
+                    "interactive-card group text-left rounded-xl border border-border bg-card p-4 hover:border-primary/30 hover:bg-secondary/30 transition-all border-l-[3px]",
                     report.borderClass
                   )}
                 >
