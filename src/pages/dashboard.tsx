@@ -562,38 +562,38 @@ function QuickUnlockCard() {
           <p className="text-[11px] text-muted-foreground">Remove lockout from a user account</p>
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="rounded-xl border border-border/70 bg-secondary/10 p-3.5 space-y-3">
         <div>
           <QuickActionFieldLabel>User Identity</QuickActionFieldLabel>
-          <input
-            value={sam}
-            onChange={(e) => setSam(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
-            placeholder="Username, DOMAIN\\user, or user@domain"
-            autoComplete="off"
-            name="quick-unlock-sam"
-            spellCheck={false}
-            autoCorrect="off"
-            autoCapitalize="none"
-            data-lpignore="true"
-            data-1p-ignore="true"
-            data-form-type="other"
-            className="input-base w-full font-mono"
-          />
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              value={sam}
+              onChange={(e) => setSam(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
+              placeholder="Username, DOMAIN\\user, or user@domain"
+              autoComplete="off"
+              name="quick-unlock-sam"
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="none"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-form-type="other"
+              className="input-base w-full flex-1 font-mono"
+            />
+            <button
+              onClick={handleUnlock}
+              disabled={unlock.isPending || !normalizedSam}
+              className="inline-flex h-9 min-w-[132px] items-center justify-center rounded-md bg-warning px-4 text-[12px] font-semibold text-warning-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+            >
+              {unlock.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Unlock Account"}
+            </button>
+          </div>
         </div>
-        <div className="flex justify-end">
-          <button
-            onClick={handleUnlock}
-            disabled={unlock.isPending || !normalizedSam}
-            className="inline-flex h-9 min-w-[110px] items-center justify-center rounded-md bg-warning px-4 text-[12px] font-semibold text-warning-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
-          >
-            {unlock.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Unlock Account"}
-          </button>
-        </div>
+        <p className="text-[11px] leading-5 text-muted-foreground">
+          Ignores OU scope and targets the connected directory directly. Safe to run even if the account already appears unlocked.
+        </p>
       </div>
-      <p className="mt-3 text-[11px] text-muted-foreground">
-        Ignores OU scope and targets the connected directory directly. Safe to run even if the account already appears unlocked.
-      </p>
     </div>
   );
 }
@@ -639,7 +639,7 @@ function QuickResetPasswordCard() {
           <p className="text-[11px] text-muted-foreground">Set a new password for a user account</p>
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="rounded-xl border border-border/70 bg-secondary/10 p-3.5 space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <QuickActionFieldLabel>User Identity</QuickActionFieldLabel>
@@ -688,19 +688,19 @@ function QuickResetPasswordCard() {
           />
           <span>Require password change at next login</span>
         </label>
-        <div className="flex justify-end">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[11px] leading-5 text-muted-foreground">
+            Ignores OU scope and targets the connected directory directly. Default behavior leaves the password active immediately.
+          </p>
           <button
             onClick={handleReset}
             disabled={reset.isPending || !normalizedSam || !newPw.trim()}
-            className="inline-flex h-9 min-w-[126px] items-center justify-center rounded-md bg-primary px-4 text-[12px] font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+            className="inline-flex h-9 min-w-[138px] items-center justify-center rounded-md bg-primary px-4 text-[12px] font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {reset.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Reset Password"}
           </button>
         </div>
       </div>
-      <p className="mt-3 text-[11px] text-muted-foreground">
-        Ignores OU scope and targets the connected directory directly. Default behavior leaves the password active immediately.
-      </p>
     </div>
   );
 }
