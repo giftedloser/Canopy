@@ -152,7 +152,7 @@ export default function ComputersPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search name or description..."
+            placeholder="Search name, DNS host, OS, or description..."
             autoComplete="off"
             name="computers-search"
             spellCheck={false}

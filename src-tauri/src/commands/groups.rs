@@ -72,7 +72,7 @@ pub async fn get_groups(
         if lookup_mode {
             format!("\"Name -like '*{}*' -or SamAccountName -like '*{}*'\"", safe, safe)
         } else {
-            format!("\"Name -like '*{}*'\"", safe)
+            format!("\"Name -like '*{}*' -or SamAccountName -like '*{}*' -or Description -like '*{}*'\"", safe, safe, safe)
         }
     } else {
         "*".to_string()

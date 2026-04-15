@@ -504,10 +504,11 @@ function QuickUnlockCard() {
   const unlock = useUnlockUser();
 
   const handleUnlock = async () => {
-    if (!sam.trim()) return;
+    const normalizedSam = sam.trim();
+    if (!normalizedSam) return;
     try {
-      await unlock.mutateAsync(sam.trim());
-      toast.success(`Account "${sam}" unlocked`);
+      await unlock.mutateAsync(normalizedSam);
+      toast.success(`Account "${normalizedSam}" unlocked`);
       setSam("");
     } catch (error: unknown) {
       notifyActionError(error, {
@@ -533,7 +534,7 @@ function QuickUnlockCard() {
           value={sam}
           onChange={(e) => setSam(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
-          placeholder="SAM Account Name"
+          placeholder="Username (SAM)"
           autoComplete="off"
           name="quick-unlock-sam"
           spellCheck={false}
@@ -552,6 +553,9 @@ function QuickUnlockCard() {
           {unlock.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Unlock"}
         </button>
       </div>
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        Uses the user&apos;s SAM account name. Safe to run even if the account already appears unlocked.
+      </p>
     </div>
   );
 }
@@ -564,14 +568,16 @@ function QuickResetPasswordCard() {
   const reset = useResetPassword();
 
   const handleReset = async () => {
-    if (!sam.trim() || !newPw.trim()) return;
+    const normalizedSam = sam.trim();
+    const normalizedPassword = newPw.trim();
+    if (!normalizedSam || !normalizedPassword) return;
     try {
       await reset.mutateAsync({
-        samAccountName: sam.trim(),
-        newPassword: newPw.trim(),
+        samAccountName: normalizedSam,
+        newPassword: normalizedPassword,
         changePasswordAtLogon,
       });
-      toast.success(`Password reset for "${sam}"`);
+      toast.success(`Password reset for "${normalizedSam}"`);
       setSam(""); setNewPw(""); setChangePasswordAtLogon(false);
     } catch (error: unknown) {
       notifyActionError(error, {
@@ -596,7 +602,8 @@ function QuickResetPasswordCard() {
         <input
           value={sam}
           onChange={(e) => setSam(e.target.value)}
-          placeholder="Username"
+          onKeyDown={(e) => e.key === "Enter" && handleReset()}
+          placeholder="Username (SAM)"
           autoComplete="off"
           name="quick-reset-username"
           spellCheck={false}
@@ -640,6 +647,9 @@ function QuickResetPasswordCard() {
         />
         <span>Require password change at next login</span>
       </label>
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        Default behavior leaves the password active immediately. Enable the checkbox only if your environment needs a forced change.
+      </p>
     </div>
   );
 }

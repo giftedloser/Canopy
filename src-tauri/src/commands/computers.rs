@@ -40,7 +40,7 @@ pub async fn get_computers(
         if lookup_mode {
             format!("\"Name -like '*{}*' -or DNSHostName -like '*{}*'\"", safe, safe)
         } else {
-            format!("\"Name -like '*{}*' -or Description -like '*{}*'\"", safe, safe)
+            format!("\"Name -like '*{}*' -or DNSHostName -like '*{}*' -or Description -like '*{}*' -or OperatingSystem -like '*{}*'\"", safe, safe, safe, safe)
         }
     } else {
         "*".to_string()

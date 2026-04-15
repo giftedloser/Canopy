@@ -149,7 +149,7 @@ export default function GroupsPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search groups..."
+            placeholder="Search name, group ID, or description..."
             autoComplete="off"
             name="groups-search"
             spellCheck={false}

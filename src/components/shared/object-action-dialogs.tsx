@@ -219,7 +219,7 @@ export function GroupPickerDialog({
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search groups..."
+            placeholder="Search group name or group ID..."
             autoComplete="off"
             name="group-picker-search"
             spellCheck={false}
@@ -236,7 +236,7 @@ export function GroupPickerDialog({
           <div className="max-h-[280px] overflow-auto">
             {!search.trim() ? (
               <div className="px-4 py-6 text-sm text-muted-foreground">
-                Type at least 2 characters to search for groups.
+                Type at least 2 characters to search by group name or group ID.
               </div>
             ) : isLoading ? (
               <div className="flex items-center justify-center h-32 text-muted-foreground">

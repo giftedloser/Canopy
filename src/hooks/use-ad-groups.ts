@@ -72,6 +72,7 @@ export function useGroupLookup(search: string, enabled = true) {
         sortBy: "Name",
         sortDir: "asc",
         includeMemberCounts: false,
+        lookupMode: true,
       });
       return normalizePagedResult<CsvRow>(parseAdJson(raw), 20).items;
     },
