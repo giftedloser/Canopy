@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.3] - 2026-04-15
+
+### Changed
+- Refined the dashboard quick-action cards again so the unlock and reset flows use cleaner spacing, shorter card height, and theme-aware action buttons
+- Moved the password-change option into the reset card action row so it reads as part of the final reset action instead of the password field
+
 ## [1.0.2] - 2026-04-15
 
 ### Changed

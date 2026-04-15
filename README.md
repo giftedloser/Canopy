@@ -80,10 +80,10 @@ Add-WindowsCapability -Online -Name Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0
 
 ### Install From Releases
 
-Download `Canopy v1.0.2` directly:
+Download `Canopy v1.0.3` directly:
 
-- [MSI installer](https://github.com/giftedloser/Canopy/releases/download/v1.0.2/Canopy_1.0.2_x64_en-US.msi)
-- [Setup executable](https://github.com/giftedloser/Canopy/releases/download/v1.0.2/Canopy_1.0.2_x64-setup.exe)
+- [MSI installer](https://github.com/giftedloser/Canopy/releases/download/v1.0.3/Canopy_1.0.3_x64_en-US.msi)
+- [Setup executable](https://github.com/giftedloser/Canopy/releases/download/v1.0.3/Canopy_1.0.3_x64-setup.exe)
 - [All releases](https://github.com/giftedloser/Canopy/releases)
 
 1. Install on a Windows machine with WebView2, RSAT AD tools, and line-of-sight to your directory environment.
