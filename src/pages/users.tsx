@@ -119,6 +119,16 @@ export default function UsersPage() {
   }, [searchParams]);
 
   useEffect(() => {
+    const selected = searchParams.get("select")?.trim();
+    if (!selected) return;
+
+    setSelectedSam(selected);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("select");
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
     setPage(1);
   }, [debouncedSearch, statusFilter, sortKey, sortDir, pageSize]);
 

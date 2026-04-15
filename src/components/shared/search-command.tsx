@@ -249,10 +249,26 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
     requestSequence.current += 1;
     setLoading(false);
     onOpenChange(false);
-    if      (result.type === "page")     navigate(pageRoutes[result.name] || "/");
-    else if (result.type === "user")     navigate("/users");
-    else if (result.type === "computer") navigate("/computers");
-    else if (result.type === "group")    navigate("/groups");
+    if (result.type === "page") {
+      navigate(pageRoutes[result.name] || "/");
+      return;
+    }
+
+    if (result.type === "user" && result.sam) {
+      const params = new URLSearchParams({ select: result.sam });
+      navigate({ pathname: "/users", search: `?${params.toString()}` });
+      return;
+    }
+
+    if (result.type === "computer") {
+      const params = new URLSearchParams({ select: result.name });
+      navigate({ pathname: "/computers", search: `?${params.toString()}` });
+      return;
+    }
+
+    if (result.type === "group") {
+      navigate("/groups");
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

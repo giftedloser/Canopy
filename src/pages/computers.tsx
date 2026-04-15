@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn, formatDate, getOUFromDN, exportToCSV } from "@/lib/utils";
 import { useCredentialStore } from "@/stores/credential-store";
@@ -41,6 +42,7 @@ const COMPUTER_COLUMN_MINS = [22, 14, 12, 8, 8, 6] as const;
 
 export default function ComputersPage() {
   const isConnected = useCredentialStore((s) => s.isConnected);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch]                   = useState("");
   const debouncedSearch = useDebouncedValue(search);
   const [selectedComputer, setSelectedComputer] = useState<string | null>(null);
@@ -97,6 +99,16 @@ export default function ComputersPage() {
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, sortKey, sortDir, pageSize]);
+
+  useEffect(() => {
+    const selected = searchParams.get("select")?.trim();
+    if (!selected) return;
+
+    setSelectedComputer(selected);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("select");
+    setSearchParams(nextParams, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   if (!isConnected) {
     return (
