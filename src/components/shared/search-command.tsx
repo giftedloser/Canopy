@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useCredentialStore } from "@/stores/credential-store";
+import { useOuScopeStore } from "@/stores/ou-scope-store";
 import { getUsersPage, getComputersPage, getGroupsPage } from "@/lib/tauri-ad";
 import { parseAdJson, normalizePagedResult } from "@/lib/utils";
 import {
@@ -103,6 +104,19 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
   const connectionScope = useCredentialStore(
     (s) => `${s.connectionInfo?.domainName ?? ""}|${s.connectionInfo?.activeServer ?? ""}`
   );
+  const scopeActive = useOuScopeStore((s) => s.scopeActive);
+  const enabledOus = useOuScopeStore((s) => s.enabledOus);
+  const ouScopes = useMemo(
+    () =>
+      scopeActive && enabledOus.size > 0
+        ? Array.from(enabledOus).sort((a, b) => a.localeCompare(b))
+        : undefined,
+    [enabledOus, scopeActive]
+  );
+  const ouScopeCacheKey = useMemo(
+    () => (ouScopes && ouScopes.length > 0 ? ouScopes.join("|") : "__all__"),
+    [ouScopes]
+  );
   const [query,    setQuery]    = useState("");
   const [results,  setResults]  = useState<SearchResult[]>(pages);
   const [selected, setSelected] = useState(0);
@@ -122,7 +136,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
 
   useEffect(() => {
     searchCache.current.clear();
-  }, [connectionScope]);
+  }, [connectionScope, ouScopeCacheKey]);
 
   useEffect(() => {
     const normalizedQuery = query.trim();
@@ -152,7 +166,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
 
     const requestId = ++requestSequence.current;
     const timer = setTimeout(async () => {
-      const cacheKey = `${connectionScope}::${normalizedQuery.toLowerCase()}`;
+      const cacheKey = `${connectionScope}::${ouScopeCacheKey}::${normalizedQuery.toLowerCase()}`;
       const cached = searchCache.current.get(cacheKey);
       if (cached && Date.now() - cached.fetchedAt < SEARCH_CACHE_TTL_MS) {
         setResults(cached.results);
@@ -164,9 +178,9 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
       setLoading(true);
       try {
         const [usersRaw, computersRaw, groupsRaw] = await Promise.allSettled([
-          getUsersPage({ search: normalizedQuery, page: 1, pageSize: COMMAND_SEARCH_LIMITS.users, lookupMode: true }),
-          getComputersPage({ search: normalizedQuery, page: 1, pageSize: COMMAND_SEARCH_LIMITS.computers, lookupMode: true }),
-          getGroupsPage({ search: normalizedQuery, page: 1, pageSize: COMMAND_SEARCH_LIMITS.groups, includeMemberCounts: false, lookupMode: true }),
+          getUsersPage({ search: normalizedQuery, ouScopes, page: 1, pageSize: COMMAND_SEARCH_LIMITS.users, lookupMode: true }),
+          getComputersPage({ search: normalizedQuery, ouScopes, page: 1, pageSize: COMMAND_SEARCH_LIMITS.computers, lookupMode: true }),
+          getGroupsPage({ search: normalizedQuery, ouScopes, page: 1, pageSize: COMMAND_SEARCH_LIMITS.groups, includeMemberCounts: false, lookupMode: true }),
         ]);
 
         const adResults: SearchResult[] = [];
@@ -246,7 +260,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, isConnected, connectionScope]);
+  }, [query, isConnected, connectionScope, ouScopeCacheKey, ouScopes]);
 
   const handleSelect = (result: SearchResult) => {
     requestSequence.current += 1;
