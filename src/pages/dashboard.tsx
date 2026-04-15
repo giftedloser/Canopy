@@ -559,10 +559,9 @@ function QuickUnlockCard() {
             <p className="text-[13px] font-semibold">Unlock Account</p>
             <QuickActionBadge>Directory-wide</QuickActionBadge>
           </div>
-          <p className="text-[11px] text-muted-foreground">Remove lockout from a user account</p>
         </div>
       </div>
-      <div className="rounded-xl border border-border/70 bg-secondary/10 p-3.5 space-y-3">
+      <div className="space-y-3">
         <div>
           <QuickActionFieldLabel>User Identity</QuickActionFieldLabel>
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -636,10 +635,9 @@ function QuickResetPasswordCard() {
             <p className="text-[13px] font-semibold">Reset Password</p>
             <QuickActionBadge>Directory-wide</QuickActionBadge>
           </div>
-          <p className="text-[11px] text-muted-foreground">Set a new password for a user account</p>
         </div>
       </div>
-      <div className="rounded-xl border border-border/70 bg-secondary/10 p-3.5 space-y-3">
+      <div className="space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <QuickActionFieldLabel>User Identity</QuickActionFieldLabel>
@@ -679,7 +677,7 @@ function QuickResetPasswordCard() {
             />
           </div>
         </div>
-        <label className="flex items-start gap-2.5 rounded-lg border border-border/70 bg-secondary/20 px-3 py-2.5 text-[12px] text-muted-foreground">
+        <label className="flex items-start gap-2.5 px-1 py-1 text-[12px] text-muted-foreground">
           <input
             type="checkbox"
             checked={changePasswordAtLogon}
