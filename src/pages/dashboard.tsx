@@ -399,6 +399,22 @@ function normalizeUserIdentity(value: string) {
   return withoutUpn;
 }
 
+function QuickActionBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-full border border-border/70 bg-secondary/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+      {children}
+    </span>
+  );
+}
+
+function QuickActionFieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+      {children}
+    </label>
+  );
+}
+
 /* ─── Stat card ──────────────────────────────────────────────── */
 function StatCard({
   icon: Icon,
@@ -533,46 +549,49 @@ function QuickUnlockCard() {
   };
 
   return (
-    <div className="interactive-card rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center gap-3 mb-3">
+    <div className="interactive-card rounded-xl border border-border bg-card p-4 sm:p-5">
+      <div className="flex items-start gap-3 mb-4">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-warning/10 shrink-0">
           <Unlock className="w-4 h-4 text-warning" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <p className="text-[13px] font-semibold">Unlock Account</p>
-            <span className="rounded-full border border-border/70 bg-secondary/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-              Directory-wide
-            </span>
+            <QuickActionBadge>Directory-wide</QuickActionBadge>
           </div>
           <p className="text-[11px] text-muted-foreground">Remove lockout from a user account</p>
         </div>
       </div>
-      <div className="flex gap-2">
-        <input
-          value={sam}
-          onChange={(e) => setSam(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
-          placeholder="Username, DOMAIN\\user, or user@domain"
-          autoComplete="off"
-          name="quick-unlock-sam"
-          spellCheck={false}
-          autoCorrect="off"
-          autoCapitalize="none"
-          data-lpignore="true"
-          data-1p-ignore="true"
-          data-form-type="other"
-          className="input-base flex-1 font-mono"
-        />
-        <button
-          onClick={handleUnlock}
-          disabled={unlock.isPending || !normalizedSam}
-          className="h-8 px-3.5 rounded-md bg-warning text-warning-foreground text-[12px] font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
-        >
-          {unlock.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Unlock"}
-        </button>
+      <div className="space-y-3">
+        <div>
+          <QuickActionFieldLabel>User Identity</QuickActionFieldLabel>
+          <input
+            value={sam}
+            onChange={(e) => setSam(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
+            placeholder="Username, DOMAIN\\user, or user@domain"
+            autoComplete="off"
+            name="quick-unlock-sam"
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="none"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-form-type="other"
+            className="input-base w-full font-mono"
+          />
+        </div>
+        <div className="flex justify-end">
+          <button
+            onClick={handleUnlock}
+            disabled={unlock.isPending || !normalizedSam}
+            className="inline-flex h-9 min-w-[110px] items-center justify-center rounded-md bg-warning px-4 text-[12px] font-semibold text-warning-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+          >
+            {unlock.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Unlock Account"}
+          </button>
+        </div>
       </div>
-      <p className="mt-2 text-[11px] text-muted-foreground">
+      <p className="mt-3 text-[11px] text-muted-foreground">
         Ignores OU scope and targets the connected directory directly. Safe to run even if the account already appears unlocked.
       </p>
     </div>
@@ -607,71 +626,79 @@ function QuickResetPasswordCard() {
   };
 
   return (
-    <div className="interactive-card rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center gap-3 mb-3">
+    <div className="interactive-card rounded-xl border border-border bg-card p-4 sm:p-5">
+      <div className="flex items-start gap-3 mb-4">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
           <KeyRound className="w-4 h-4 text-primary" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <p className="text-[13px] font-semibold">Reset Password</p>
-            <span className="rounded-full border border-border/70 bg-secondary/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-              Directory-wide
-            </span>
+            <QuickActionBadge>Directory-wide</QuickActionBadge>
           </div>
           <p className="text-[11px] text-muted-foreground">Set a new password for a user account</p>
         </div>
       </div>
-      <div className="flex gap-2">
-        <input
-          value={sam}
-          onChange={(e) => setSam(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleReset()}
-          placeholder="Username, DOMAIN\\user, or user@domain"
-          autoComplete="off"
-          name="quick-reset-username"
-          spellCheck={false}
-          autoCorrect="off"
-          autoCapitalize="none"
-          data-lpignore="true"
-          data-1p-ignore="true"
-          data-form-type="other"
-          className="input-base flex-1 font-mono"
-        />
-        <input
-          type="password"
-          value={newPw}
-          onChange={(e) => setNewPw(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleReset()}
-          placeholder="New password"
-          autoComplete="new-password"
-          name="quick-reset-password"
-          spellCheck={false}
-          autoCorrect="off"
-          autoCapitalize="none"
-          data-lpignore="true"
-          data-1p-ignore="true"
-          data-form-type="other"
-          className="input-base flex-1"
-        />
-        <button
-          onClick={handleReset}
-          disabled={reset.isPending || !normalizedSam || !newPw.trim()}
-          className="h-8 px-3.5 rounded-md bg-primary text-primary-foreground text-[12px] font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
-        >
-          {reset.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Reset"}
-        </button>
+      <div className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <QuickActionFieldLabel>User Identity</QuickActionFieldLabel>
+            <input
+              value={sam}
+              onChange={(e) => setSam(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleReset()}
+              placeholder="Username, DOMAIN\\user, or user@domain"
+              autoComplete="off"
+              name="quick-reset-username"
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="none"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-form-type="other"
+              className="input-base w-full font-mono"
+            />
+          </div>
+          <div>
+            <QuickActionFieldLabel>New Password</QuickActionFieldLabel>
+            <input
+              type="password"
+              value={newPw}
+              onChange={(e) => setNewPw(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleReset()}
+              placeholder="New password"
+              autoComplete="new-password"
+              name="quick-reset-password"
+              spellCheck={false}
+              autoCorrect="off"
+              autoCapitalize="none"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-form-type="other"
+              className="input-base w-full"
+            />
+          </div>
+        </div>
+        <label className="flex items-start gap-2.5 rounded-lg border border-border/70 bg-secondary/20 px-3 py-2.5 text-[12px] text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={changePasswordAtLogon}
+            onChange={(event) => setChangePasswordAtLogon(event.target.checked)}
+            className="mt-0.5"
+          />
+          <span>Require password change at next login</span>
+        </label>
+        <div className="flex justify-end">
+          <button
+            onClick={handleReset}
+            disabled={reset.isPending || !normalizedSam || !newPw.trim()}
+            className="inline-flex h-9 min-w-[126px] items-center justify-center rounded-md bg-primary px-4 text-[12px] font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+          >
+            {reset.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Reset Password"}
+          </button>
+        </div>
       </div>
-      <label className="mt-2 flex items-start gap-2.5 rounded-lg border border-border/70 bg-secondary/20 px-3 py-2.5 text-[12px] text-muted-foreground">
-        <input
-          type="checkbox"
-          checked={changePasswordAtLogon}
-          onChange={(event) => setChangePasswordAtLogon(event.target.checked)}
-          className="mt-0.5"
-        />
-        <span>Require password change at next login</span>
-      </label>
-      <p className="mt-2 text-[11px] text-muted-foreground">
+      <p className="mt-3 text-[11px] text-muted-foreground">
         Ignores OU scope and targets the connected directory directly. Default behavior leaves the password active immediately.
       </p>
     </div>
