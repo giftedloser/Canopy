@@ -579,7 +579,7 @@ function QuickUnlockCard() {
   const [sam, setSam] = useState("");
   const [status, setStatus] = useState<{ tone: QuickActionStatusTone; message: string }>({
     tone: "neutral",
-    message: "Use SAM, DOMAIN\\user, or user@domain.",
+    message: "",
   });
   const unlock = useUnlockUser();
   const normalizedSam = normalizeUserIdentity(sam);
@@ -621,14 +621,14 @@ function QuickUnlockCard() {
       </div>
       <div className="flex flex-1 flex-col space-y-3">
         <div>
-          <QuickActionFieldLabel>User Identity Format</QuickActionFieldLabel>
+          <QuickActionFieldLabel>User</QuickActionFieldLabel>
           <div className="flex flex-col gap-2 sm:flex-row">
             <input
               value={sam}
               onChange={(e) => {
                 setSam(e.target.value);
                 if (status.tone !== "neutral") {
-                  setStatus({ tone: "neutral", message: "Use SAM, DOMAIN\\user, or user@domain." });
+                  setStatus({ tone: "neutral", message: "" });
                 }
               }}
               onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
@@ -663,7 +663,7 @@ function QuickResetPasswordCard() {
   const [changePasswordAtLogon, setChangePasswordAtLogon] = useState(false);
   const [status, setStatus] = useState<{ tone: QuickActionStatusTone; message: string }>({
     tone: "neutral",
-    message: "Use SAM, DOMAIN\\user, or user@domain.",
+    message: "",
   });
   const reset = useResetPassword();
   const normalizedSam = normalizeUserIdentity(sam);
@@ -715,13 +715,13 @@ function QuickResetPasswordCard() {
       <div className="flex flex-1 flex-col space-y-3">
         <div className="grid gap-3 sm:grid-cols-[1.1fr_1fr]">
           <div>
-            <QuickActionFieldLabel>User Identity Format</QuickActionFieldLabel>
+            <QuickActionFieldLabel>User</QuickActionFieldLabel>
             <input
               value={sam}
               onChange={(e) => {
                 setSam(e.target.value);
                 if (status.tone !== "neutral") {
-                  setStatus({ tone: "neutral", message: "Use SAM, DOMAIN\\user, or user@domain." });
+                  setStatus({ tone: "neutral", message: "" });
                 }
               }}
               onKeyDown={(e) => e.key === "Enter" && handleReset()}
@@ -745,7 +745,7 @@ function QuickResetPasswordCard() {
               onChange={(e) => {
                 setNewPw(e.target.value);
                 if (status.tone !== "neutral") {
-                  setStatus({ tone: "neutral", message: "Use SAM, DOMAIN\\user, or user@domain." });
+                  setStatus({ tone: "neutral", message: "" });
                 }
               }}
               onKeyDown={(e) => e.key === "Enter" && handleReset()}
