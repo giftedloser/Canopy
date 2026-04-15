@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2026-04-15
+
+### Changed
+- Expanded user, computer, and group search coverage so command search, grid filters, and picker dialogs match more real admin lookup patterns
+- Added an optional `require password change at next login` toggle to every user password reset flow while keeping the default behavior off
+- Tightened dashboard quick actions and shared search copy so accepted identity formats are clearer in the UI
+
+### Fixed
+- Command palette object results now open the selected user or computer detail view instead of only navigating to the page
+- User unlock actions remain available even when lockout state appears stale, and password resets explicitly respect the chosen logon-change behavior
+- Refined shared hover, focus, and press interactions across tables, cards, search surfaces, and context menus for a more polished feel
+
 ## [1.0.0] - 2026-04-14
 
 ### Added
