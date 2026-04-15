@@ -123,7 +123,7 @@ export default function Dashboard() {
       {/* Quick actions */}
       <div>
         <SectionLabel>Quick Actions</SectionLabel>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+        <div className="grid grid-cols-1 items-stretch gap-3 mt-3 sm:grid-cols-2">
           <QuickUnlockCard />
           <QuickResetPasswordCard />
         </div>
@@ -401,7 +401,7 @@ function normalizeUserIdentity(value: string) {
 
 function QuickActionBadge({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-full border border-border/70 bg-secondary/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+    <span className="rounded-full border border-primary/20 bg-primary/[0.08] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-foreground/85">
       {children}
     </span>
   );
@@ -413,6 +413,52 @@ function QuickActionFieldLabel({ children }: { children: React.ReactNode }) {
       {children}
     </label>
   );
+}
+
+function QuickActionButton({
+  children,
+  tone,
+  disabled,
+  onClick,
+}: {
+  children: React.ReactNode;
+  tone: "primary" | "warning";
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  const toneClass =
+    tone === "warning"
+      ? "border border-warning/30 bg-warning text-warning-foreground shadow-[0_8px_18px_hsl(38_92%_54%_/0.18)]"
+      : "border border-primary/30 bg-primary text-primary-foreground shadow-[0_8px_18px_hsl(38_92%_54%_/0.18)]";
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex h-9 min-w-[142px] items-center justify-center rounded-md px-4 text-[12px] font-bold tracking-[0.01em] transition-[transform,opacity,box-shadow] duration-150 hover:-translate-y-px hover:opacity-95 disabled:translate-y-0 disabled:opacity-40 ${toneClass}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+type QuickActionStatusTone = "neutral" | "success" | "error";
+
+function QuickActionStatusLine({
+  message,
+  tone = "neutral",
+}: {
+  message: string;
+  tone?: QuickActionStatusTone;
+}) {
+  const toneClass =
+    tone === "success"
+      ? "text-success"
+      : tone === "error"
+      ? "text-destructive"
+      : "text-muted-foreground";
+
+  return <p className={`min-h-4 text-[11px] leading-4 ${toneClass}`}>{message}</p>;
 }
 
 /* ─── Stat card ──────────────────────────────────────────────── */
@@ -531,16 +577,28 @@ function ErrorBanner({ message }: { message: string }) {
 /* ─── Quick Unlock ───────────────────────────────────────────── */
 function QuickUnlockCard() {
   const [sam, setSam] = useState("");
+  const [status, setStatus] = useState<{ tone: QuickActionStatusTone; message: string }>({
+    tone: "neutral",
+    message: "Use SAM, DOMAIN\\user, or user@domain.",
+  });
   const unlock = useUnlockUser();
   const normalizedSam = normalizeUserIdentity(sam);
 
   const handleUnlock = async () => {
-    if (!normalizedSam) return;
+    if (!normalizedSam) {
+      setStatus({ tone: "error", message: "Enter a user identity to unlock." });
+      return;
+    }
     try {
       await unlock.mutateAsync(normalizedSam);
       toast.success(`Account "${normalizedSam}" unlocked`);
       setSam("");
+      setStatus({ tone: "success", message: `Unlocked ${normalizedSam}.` });
     } catch (error: unknown) {
+      setStatus({
+        tone: "error",
+        message: formatErrorMessage(error, "Failed to unlock account"),
+      });
       notifyActionError(error, {
         fallback: "Failed to unlock account",
         cancelled: "Unlock cancelled",
@@ -549,7 +607,7 @@ function QuickUnlockCard() {
   };
 
   return (
-    <div className="interactive-card rounded-xl border border-border bg-card p-4 sm:p-5">
+    <div className="interactive-card h-full rounded-xl border border-border bg-card p-4 sm:p-5">
       <div className="flex items-start gap-3 mb-4">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-warning/10 shrink-0">
           <Unlock className="w-4 h-4 text-warning" />
@@ -561,15 +619,20 @@ function QuickUnlockCard() {
           </div>
         </div>
       </div>
-      <div className="space-y-3">
+      <div className="flex flex-1 flex-col space-y-3">
         <div>
-          <QuickActionFieldLabel>User Identity</QuickActionFieldLabel>
+          <QuickActionFieldLabel>User Identity Format</QuickActionFieldLabel>
           <div className="flex flex-col gap-2 sm:flex-row">
             <input
               value={sam}
-              onChange={(e) => setSam(e.target.value)}
+              onChange={(e) => {
+                setSam(e.target.value);
+                if (status.tone !== "neutral") {
+                  setStatus({ tone: "neutral", message: "Use SAM, DOMAIN\\user, or user@domain." });
+                }
+              }}
               onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
-              placeholder="Username, DOMAIN\\user, or user@domain"
+              placeholder="jdoe, DOMAIN\\jdoe, or jdoe@domain.com"
               autoComplete="off"
               name="quick-unlock-sam"
               spellCheck={false}
@@ -580,14 +643,13 @@ function QuickUnlockCard() {
               data-form-type="other"
               className="input-base w-full flex-1 font-mono"
             />
-            <button
-              onClick={handleUnlock}
-              disabled={unlock.isPending || !normalizedSam}
-              className="inline-flex h-9 min-w-[132px] items-center justify-center rounded-md bg-warning px-4 text-[12px] font-semibold text-warning-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
-            >
+            <QuickActionButton onClick={handleUnlock} disabled={unlock.isPending || !normalizedSam} tone="warning">
               {unlock.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Unlock Account"}
-            </button>
+            </QuickActionButton>
           </div>
+        </div>
+        <div className="mt-auto">
+          <QuickActionStatusLine message={status.message} tone={status.tone} />
         </div>
       </div>
     </div>
@@ -599,12 +661,23 @@ function QuickResetPasswordCard() {
   const [sam, setSam]     = useState("");
   const [newPw, setNewPw] = useState("");
   const [changePasswordAtLogon, setChangePasswordAtLogon] = useState(false);
+  const [status, setStatus] = useState<{ tone: QuickActionStatusTone; message: string }>({
+    tone: "neutral",
+    message: "Use SAM, DOMAIN\\user, or user@domain.",
+  });
   const reset = useResetPassword();
   const normalizedSam = normalizeUserIdentity(sam);
 
   const handleReset = async () => {
     const normalizedPassword = newPw.trim();
-    if (!normalizedSam || !normalizedPassword) return;
+    if (!normalizedSam) {
+      setStatus({ tone: "error", message: "Enter a user identity before resetting." });
+      return;
+    }
+    if (!normalizedPassword) {
+      setStatus({ tone: "error", message: "Enter a new password before resetting." });
+      return;
+    }
     try {
       await reset.mutateAsync({
         samAccountName: normalizedSam,
@@ -613,7 +686,12 @@ function QuickResetPasswordCard() {
       });
       toast.success(`Password reset for "${normalizedSam}"`);
       setSam(""); setNewPw(""); setChangePasswordAtLogon(false);
+      setStatus({ tone: "success", message: `Password reset for ${normalizedSam}.` });
     } catch (error: unknown) {
+      setStatus({
+        tone: "error",
+        message: formatErrorMessage(error, "Failed to reset password"),
+      });
       notifyActionError(error, {
         fallback: "Failed to reset password",
         cancelled: "Password reset cancelled",
@@ -622,7 +700,7 @@ function QuickResetPasswordCard() {
   };
 
   return (
-    <div className="interactive-card rounded-xl border border-border bg-card p-4 sm:p-5">
+    <div className="interactive-card h-full rounded-xl border border-border bg-card p-4 sm:p-5">
       <div className="flex items-start gap-3 mb-4">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
           <KeyRound className="w-4 h-4 text-primary" />
@@ -634,15 +712,20 @@ function QuickResetPasswordCard() {
           </div>
         </div>
       </div>
-      <div className="space-y-3">
-        <div className="grid gap-3 sm:grid-cols-2">
+      <div className="flex flex-1 flex-col space-y-3">
+        <div className="grid gap-3 sm:grid-cols-[1.1fr_1fr]">
           <div>
-            <QuickActionFieldLabel>User Identity</QuickActionFieldLabel>
+            <QuickActionFieldLabel>User Identity Format</QuickActionFieldLabel>
             <input
               value={sam}
-              onChange={(e) => setSam(e.target.value)}
+              onChange={(e) => {
+                setSam(e.target.value);
+                if (status.tone !== "neutral") {
+                  setStatus({ tone: "neutral", message: "Use SAM, DOMAIN\\user, or user@domain." });
+                }
+              }}
               onKeyDown={(e) => e.key === "Enter" && handleReset()}
-              placeholder="Username, DOMAIN\\user, or user@domain"
+              placeholder="jdoe, DOMAIN\\jdoe, or jdoe@domain.com"
               autoComplete="off"
               name="quick-reset-username"
               spellCheck={false}
@@ -654,12 +737,17 @@ function QuickResetPasswordCard() {
               className="input-base w-full font-mono"
             />
           </div>
-          <div>
+          <div className="space-y-2">
             <QuickActionFieldLabel>New Password</QuickActionFieldLabel>
             <input
               type="password"
               value={newPw}
-              onChange={(e) => setNewPw(e.target.value)}
+              onChange={(e) => {
+                setNewPw(e.target.value);
+                if (status.tone !== "neutral") {
+                  setStatus({ tone: "neutral", message: "Use SAM, DOMAIN\\user, or user@domain." });
+                }
+              }}
               onKeyDown={(e) => e.key === "Enter" && handleReset()}
               placeholder="New password"
               autoComplete="new-password"
@@ -672,25 +760,22 @@ function QuickResetPasswordCard() {
               data-form-type="other"
               className="input-base w-full"
             />
+            <label className="flex items-start gap-2.5 py-0.5 text-[12px] text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={changePasswordAtLogon}
+                onChange={(event) => setChangePasswordAtLogon(event.target.checked)}
+                className="mt-0.5"
+              />
+              <span>Require password change at next login</span>
+            </label>
           </div>
         </div>
-        <label className="flex items-start gap-2.5 px-1 py-1 text-[12px] text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={changePasswordAtLogon}
-            onChange={(event) => setChangePasswordAtLogon(event.target.checked)}
-            className="mt-0.5"
-          />
-          <span>Require password change at next login</span>
-        </label>
-        <div className="flex justify-end">
-          <button
-            onClick={handleReset}
-            disabled={reset.isPending || !normalizedSam || !newPw.trim()}
-            className="inline-flex h-9 min-w-[138px] items-center justify-center rounded-md bg-primary px-4 text-[12px] font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
-          >
+        <div className="mt-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <QuickActionStatusLine message={status.message} tone={status.tone} />
+          <QuickActionButton onClick={handleReset} disabled={reset.isPending || !normalizedSam || !newPw.trim()} tone="primary">
             {reset.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Reset Password"}
-          </button>
+          </QuickActionButton>
         </div>
       </div>
     </div>
