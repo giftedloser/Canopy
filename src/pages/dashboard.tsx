@@ -417,21 +417,18 @@ function QuickActionFieldLabel({ children }: { children: React.ReactNode }) {
 
 function QuickActionButton({
   children,
-  tone,
   disabled,
   onClick,
 }: {
   children: React.ReactNode;
-  tone: "primary" | "warning";
   disabled?: boolean;
   onClick: () => void;
 }) {
-  const toneVar = tone === "warning" ? "var(--color-warning)" : "var(--color-primary)";
   const buttonStyle = {
-    backgroundColor: `color-mix(in srgb, ${toneVar} 18%, var(--color-card))`,
-    borderColor: `color-mix(in srgb, ${toneVar} 30%, var(--color-border))`,
-    color: "var(--color-foreground)",
-    boxShadow: "0 6px 16px hsl(222 25% 12% / 0.06)",
+    backgroundColor: "color-mix(in srgb, var(--color-primary) 14%, var(--color-card))",
+    borderColor: "color-mix(in srgb, var(--color-primary) 24%, var(--color-border))",
+    color: "color-mix(in srgb, var(--color-primary) 52%, var(--color-foreground))",
+    boxShadow: "0 4px 12px hsl(222 25% 12% / 0.05)",
   } as const;
 
   return (
@@ -439,7 +436,7 @@ function QuickActionButton({
       onClick={onClick}
       disabled={disabled}
       style={buttonStyle}
-      className="inline-flex h-9 min-w-[142px] items-center justify-center rounded-md border px-4 text-[12px] font-semibold tracking-[0.01em] transition-[transform,opacity,box-shadow,background-color,border-color] duration-150 hover:-translate-y-px hover:opacity-95 disabled:translate-y-0 disabled:opacity-40"
+      className="interactive-control inline-flex h-9 min-w-[138px] items-center justify-center rounded-md border px-4 text-[12px] font-semibold tracking-[0.01em] transition-[transform,opacity,box-shadow,background-color,border-color,color] duration-150 hover:opacity-95 disabled:translate-y-0 disabled:opacity-40"
     >
       {children}
     </button>
@@ -463,6 +460,28 @@ function QuickActionStatusLine({
       : "text-muted-foreground";
 
   return <p className={`min-h-4 text-[11px] leading-4 ${toneClass}`}>{message}</p>;
+}
+
+function QuickActionCheckbox({
+  checked,
+  onChange,
+  children,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="inline-flex items-center gap-2 text-[11px] font-medium text-muted-foreground">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="h-3.5 w-3.5 rounded border-border bg-secondary"
+      />
+      <span>{children}</span>
+    </label>
+  );
 }
 
 /* ─── Stat card ──────────────────────────────────────────────── */
@@ -611,8 +630,8 @@ function QuickUnlockCard() {
   };
 
   return (
-    <div className="interactive-card h-full rounded-xl border border-border bg-card p-4 sm:p-5">
-      <div className="flex items-start gap-3 mb-4">
+    <div className="interactive-card h-full rounded-xl border border-border bg-card p-4">
+      <div className="mb-3 flex items-start gap-3">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-warning/10 shrink-0">
           <Unlock className="w-4 h-4 text-warning" />
         </div>
@@ -623,7 +642,7 @@ function QuickUnlockCard() {
           </div>
         </div>
       </div>
-      <div className="flex flex-1 flex-col space-y-3">
+      <div className="flex flex-1 flex-col gap-2.5">
         <div>
           <QuickActionFieldLabel>User</QuickActionFieldLabel>
           <input
@@ -647,11 +666,13 @@ function QuickUnlockCard() {
             className="input-base w-full font-mono"
           />
         </div>
-        <div className="mt-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-auto space-y-2">
           <QuickActionStatusLine message={status.message} tone={status.tone} />
-          <QuickActionButton onClick={handleUnlock} disabled={unlock.isPending || !normalizedSam} tone="warning">
-            {unlock.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Unlock Account"}
-          </QuickActionButton>
+          <div className="flex justify-end">
+            <QuickActionButton onClick={handleUnlock} disabled={unlock.isPending || !normalizedSam}>
+              {unlock.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Unlock Account"}
+            </QuickActionButton>
+          </div>
         </div>
       </div>
     </div>
@@ -702,8 +723,8 @@ function QuickResetPasswordCard() {
   };
 
   return (
-    <div className="interactive-card h-full rounded-xl border border-border bg-card p-4 sm:p-5">
-      <div className="flex items-start gap-3 mb-4">
+    <div className="interactive-card h-full rounded-xl border border-border bg-card p-4">
+      <div className="mb-3 flex items-start gap-3">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
           <KeyRound className="w-4 h-4 text-primary" />
         </div>
@@ -714,8 +735,8 @@ function QuickResetPasswordCard() {
           </div>
         </div>
       </div>
-      <div className="flex flex-1 flex-col space-y-3">
-        <div className="grid gap-3 sm:grid-cols-[1.1fr_1fr]">
+      <div className="flex flex-1 flex-col gap-2.5">
+        <div className="grid gap-2.5 sm:grid-cols-[1.1fr_1fr]">
           <div>
             <QuickActionFieldLabel>User</QuickActionFieldLabel>
             <input
@@ -739,7 +760,7 @@ function QuickResetPasswordCard() {
               className="input-base w-full font-mono"
             />
           </div>
-          <div className="space-y-2">
+          <div>
             <QuickActionFieldLabel>New Password</QuickActionFieldLabel>
             <input
               type="password"
@@ -762,21 +783,18 @@ function QuickResetPasswordCard() {
               data-form-type="other"
               className="input-base w-full"
             />
-            <label className="flex items-start gap-2.5 py-0.5 text-[12px] text-muted-foreground">
-              <input
-                type="checkbox"
-                checked={changePasswordAtLogon}
-                onChange={(event) => setChangePasswordAtLogon(event.target.checked)}
-                className="mt-0.5"
-              />
-              <span>Require password change at next login</span>
-            </label>
           </div>
         </div>
         <div className="mt-auto space-y-2">
           <QuickActionStatusLine message={status.message} tone={status.tone} />
-          <div className="flex justify-end">
-            <QuickActionButton onClick={handleReset} disabled={reset.isPending || !normalizedSam || !newPw.trim()} tone="primary">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <QuickActionCheckbox
+              checked={changePasswordAtLogon}
+              onChange={setChangePasswordAtLogon}
+            >
+              Require password change at next login
+            </QuickActionCheckbox>
+            <QuickActionButton onClick={handleReset} disabled={reset.isPending || !normalizedSam || !newPw.trim()}>
               {reset.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Reset Password"}
             </QuickActionButton>
           </div>
