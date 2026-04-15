@@ -589,9 +589,6 @@ function QuickUnlockCard() {
             </button>
           </div>
         </div>
-        <p className="text-[11px] leading-5 text-muted-foreground">
-          Ignores OU scope and targets the connected directory directly. Safe to run even if the account already appears unlocked.
-        </p>
       </div>
     </div>
   );
@@ -686,10 +683,7 @@ function QuickResetPasswordCard() {
           />
           <span>Require password change at next login</span>
         </label>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[11px] leading-5 text-muted-foreground">
-            Ignores OU scope and targets the connected directory directly. Default behavior leaves the password active immediately.
-          </p>
+        <div className="flex justify-end">
           <button
             onClick={handleReset}
             disabled={reset.isPending || !normalizedSam || !newPw.trim()}
