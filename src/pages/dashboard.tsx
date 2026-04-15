@@ -426,16 +426,20 @@ function QuickActionButton({
   disabled?: boolean;
   onClick: () => void;
 }) {
-  const toneClass =
-    tone === "warning"
-      ? "border border-warning/30 bg-warning text-warning-foreground shadow-[0_8px_18px_hsl(38_92%_54%_/0.18)]"
-      : "border border-primary/30 bg-primary text-primary-foreground shadow-[0_8px_18px_hsl(38_92%_54%_/0.18)]";
+  const toneVar = tone === "warning" ? "var(--color-warning)" : "var(--color-primary)";
+  const buttonStyle = {
+    backgroundColor: `color-mix(in srgb, ${toneVar} 18%, var(--color-card))`,
+    borderColor: `color-mix(in srgb, ${toneVar} 30%, var(--color-border))`,
+    color: "var(--color-foreground)",
+    boxShadow: "0 6px 16px hsl(222 25% 12% / 0.06)",
+  } as const;
 
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-9 min-w-[142px] items-center justify-center rounded-md px-4 text-[12px] font-bold tracking-[0.01em] transition-[transform,opacity,box-shadow] duration-150 hover:-translate-y-px hover:opacity-95 disabled:translate-y-0 disabled:opacity-40 ${toneClass}`}
+      style={buttonStyle}
+      className="inline-flex h-9 min-w-[142px] items-center justify-center rounded-md border px-4 text-[12px] font-semibold tracking-[0.01em] transition-[transform,opacity,box-shadow,background-color,border-color] duration-150 hover:-translate-y-px hover:opacity-95 disabled:translate-y-0 disabled:opacity-40"
     >
       {children}
     </button>
