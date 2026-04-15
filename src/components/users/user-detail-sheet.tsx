@@ -39,6 +39,7 @@ export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
   const groupsQuery = useUserGroups(sam, tab === "groups");
   const [showResetPw, setShowResetPw] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [changePasswordAtLogon, setChangePasswordAtLogon] = useState(false);
   const [groupContextMenu, setGroupContextMenu] = useState<{
     x: number;
     y: number;
@@ -189,9 +190,10 @@ export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
                 onClick={async () => {
                   if (!newPassword) return;
                   try {
-                    await resetPw.mutateAsync({ samAccountName: sam, newPassword });
+                    await resetPw.mutateAsync({ samAccountName: sam, newPassword, changePasswordAtLogon });
                     toast.success("Password reset successfully");
                     setNewPassword("");
+                    setChangePasswordAtLogon(false);
                     setShowResetPw(false);
                   } catch (error: unknown) {
                     notifyActionError(error, {
@@ -206,6 +208,15 @@ export function UserDetailSheet({ sam, onClose }: UserDetailSheetProps) {
                 {resetPw.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Set"}
               </button>
             </div>
+            <label className="mt-2 flex items-start gap-2.5 rounded-lg border border-border/70 bg-secondary/20 px-3 py-2.5 text-[12px] text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={changePasswordAtLogon}
+                onChange={(event) => setChangePasswordAtLogon(event.target.checked)}
+                className="mt-0.5"
+              />
+              <span>Require password change at next login</span>
+            </label>
             <p className="text-[10px] text-muted-foreground mt-1.5">
               Sets the user's password to the value entered above
             </p>

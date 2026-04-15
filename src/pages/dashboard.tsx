@@ -560,14 +560,19 @@ function QuickUnlockCard() {
 function QuickResetPasswordCard() {
   const [sam, setSam]     = useState("");
   const [newPw, setNewPw] = useState("");
+  const [changePasswordAtLogon, setChangePasswordAtLogon] = useState(false);
   const reset = useResetPassword();
 
   const handleReset = async () => {
     if (!sam.trim() || !newPw.trim()) return;
     try {
-      await reset.mutateAsync({ samAccountName: sam.trim(), newPassword: newPw.trim() });
+      await reset.mutateAsync({
+        samAccountName: sam.trim(),
+        newPassword: newPw.trim(),
+        changePasswordAtLogon,
+      });
       toast.success(`Password reset for "${sam}"`);
-      setSam(""); setNewPw("");
+      setSam(""); setNewPw(""); setChangePasswordAtLogon(false);
     } catch (error: unknown) {
       notifyActionError(error, {
         fallback: "Failed to reset password",
@@ -626,6 +631,15 @@ function QuickResetPasswordCard() {
           {reset.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Reset"}
         </button>
       </div>
+      <label className="mt-2 flex items-start gap-2.5 rounded-lg border border-border/70 bg-secondary/20 px-3 py-2.5 text-[12px] text-muted-foreground">
+        <input
+          type="checkbox"
+          checked={changePasswordAtLogon}
+          onChange={(event) => setChangePasswordAtLogon(event.target.checked)}
+          className="mt-0.5"
+        />
+        <span>Require password change at next login</span>
+      </label>
     </div>
   );
 }

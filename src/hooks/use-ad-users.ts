@@ -121,10 +121,12 @@ export function useResetPassword() {
     mutationFn: (params: {
       samAccountName: string;
       newPassword: string;
+      changePasswordAtLogon?: boolean;
     }) =>
       ad.resetUserPassword(
         params.samAccountName,
-        params.newPassword
+        params.newPassword,
+        params.changePasswordAtLogon ?? false
       ),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users-snapshot"] });

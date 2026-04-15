@@ -213,12 +213,18 @@ export async function getUserGroups(samAccountName: string) {
 // Users (write)
 export async function resetUserPassword(
   samAccountName: string,
-  newPassword: string
+  newPassword: string,
+  changePasswordAtLogon = false
 ) {
   return invokeWriteWithElevation<string>(
     "reset_user_password",
     `Reset password for ${samAccountName}`,
-    { samAccountName, newPassword }
+    {
+      samAccountName,
+      newPassword,
+      changePasswordAtLogon,
+      change_password_at_logon: changePasswordAtLogon,
+    }
   );
 }
 

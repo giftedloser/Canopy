@@ -177,13 +177,16 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
           (Array.isArray(users) ? users : users ? [users] : [])
             .map((u: any) => ({
               row: u,
-              score: getRelevanceScore(normalizedQueryKey, u.DisplayName, u.Name, u.SamAccountName),
+              score: getRelevanceScore(normalizedQueryKey, u.DisplayName, u.Name, u.SamAccountName, u.EmployeeNumber),
             }))
             .filter((entry) => entry.score > Number.NEGATIVE_INFINITY)
             .sort((left, right) => right.score - left.score || String(left.row.DisplayName || left.row.Name || "").localeCompare(String(right.row.DisplayName || right.row.Name || ""), undefined, { numeric: true }))
             .slice(0, COMMAND_SEARCH_LIMITS.users)
             .forEach(({ row: u }) => adResults.push({
-              type: "user", name: u.DisplayName || u.Name, detail: u.SamAccountName, sam: u.SamAccountName,
+              type: "user",
+              name: u.DisplayName || u.Name,
+              detail: u.EmployeeNumber ? `${u.SamAccountName} · ID ${u.EmployeeNumber}` : u.SamAccountName,
+              sam: u.SamAccountName,
             }));
         }
         if (computersRaw.status === "fulfilled") {
@@ -297,7 +300,7 @@ export function SearchCommand({ open, onOpenChange }: SearchCommandProps) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Search users, computers, groups..."
+              placeholder="Search users, employee IDs, computers, groups..."
               autoComplete="off"
               name="command-search"
               spellCheck={false}

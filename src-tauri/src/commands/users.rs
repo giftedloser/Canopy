@@ -81,7 +81,7 @@ pub async fn get_users(
                 let safe = sanitizer::sanitize_ps_string(&term)?;
                 if lookup_mode {
                     clauses.push(format!(
-                        "Name -like '*{safe}*' -or DisplayName -like '*{safe}*' -or SamAccountName -like '*{safe}*' -or UserPrincipalName -like '*{safe}*'"
+                        "Name -like '*{safe}*' -or DisplayName -like '*{safe}*' -or SamAccountName -like '*{safe}*' -or UserPrincipalName -like '*{safe}*' -or EmployeeNumber -like '*{safe}*'"
                     ));
                 } else {
                     clauses.push(format!(
@@ -356,19 +356,22 @@ pub async fn reset_user_password(
     server: String,
     sam_account_name: String,
     new_password: String,
+    change_password_at_logon: Option<bool>,
 ) -> Result<String, String> {
     let creds = AdCredentials { domain, username, password };
     let safe_sam = sanitizer::sanitize_sam(&sam_account_name)?;
     let safe_pw = sanitizer::sanitize_ps_string(&new_password)?;
     let srv = sanitizer::sanitize_ps_string(server.trim())?;
+    let change_password_at_logon = change_password_at_logon.unwrap_or(false);
 
     let script = format!(
         r#"Set-ADAccountPassword -Identity '{sam}' -Server '{server}' -Credential $cred -Reset -NewPassword (ConvertTo-SecureString '{pw}' -AsPlainText -Force)
-Set-ADUser -Identity '{sam}' -Server '{server}' -Credential $cred -ChangePasswordAtLogon $false
+Set-ADUser -Identity '{sam}' -Server '{server}' -Credential $cred -ChangePasswordAtLogon {change_password_at_logon}
 @{{ success = $true; message = 'Password reset successfully' }} | ConvertTo-Json"#,
         sam = safe_sam,
         server = srv,
         pw = safe_pw,
+        change_password_at_logon = if change_password_at_logon { "$true" } else { "$false" },
     );
 
     executor::execute_ad_script(&creds, &script)

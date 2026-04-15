@@ -477,9 +477,9 @@ export default function UsersPage() {
           sam={resetPasswordSam}
           loading={resetPassword.isPending}
           onClose={() => setResetPasswordSam(null)}
-          onConfirm={async (newPassword) => {
+          onConfirm={async (newPassword, changePasswordAtLogon) => {
             try {
-              await resetPassword.mutateAsync({ samAccountName: resetPasswordSam, newPassword });
+              await resetPassword.mutateAsync({ samAccountName: resetPasswordSam, newPassword, changePasswordAtLogon });
               toast.success("Password reset successfully");
               setResetPasswordSam(null);
             } catch (error: unknown) {
@@ -591,9 +591,10 @@ function ResetPasswordDialog({
   sam: string;
   loading?: boolean;
   onClose: () => void;
-  onConfirm: (newPassword: string) => Promise<void> | void;
+  onConfirm: (newPassword: string, changePasswordAtLogon: boolean) => Promise<void> | void;
 }) {
   const [newPassword, setNewPassword] = useState("");
+  const [changePasswordAtLogon, setChangePasswordAtLogon] = useState(false);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -628,13 +629,24 @@ function ResetPasswordDialog({
               autoFocus
             />
           </div>
+          <label className="flex items-start gap-2.5 rounded-lg border border-border/70 bg-secondary/20 px-3 py-2.5 text-[12px] text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={changePasswordAtLogon}
+              onChange={(e) => setChangePasswordAtLogon(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              Require password change at next login
+            </span>
+          </label>
         </div>
         <div className="px-5 py-3.5 border-t border-border flex justify-end gap-2">
           <button onClick={onClose} className="h-8 px-4 rounded-md text-[12px] font-medium text-muted-foreground hover:bg-secondary transition-colors">
             Cancel
           </button>
           <button
-            onClick={() => newPassword && onConfirm(newPassword)}
+            onClick={() => newPassword && onConfirm(newPassword, changePasswordAtLogon)}
             disabled={loading || !newPassword}
             className="h-8 px-4 rounded-md bg-primary text-primary-foreground text-[12px] font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
           >
