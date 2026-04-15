@@ -622,34 +622,32 @@ function QuickUnlockCard() {
       <div className="flex flex-1 flex-col space-y-3">
         <div>
           <QuickActionFieldLabel>User</QuickActionFieldLabel>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <input
-              value={sam}
-              onChange={(e) => {
-                setSam(e.target.value);
-                if (status.tone !== "neutral") {
-                  setStatus({ tone: "neutral", message: "" });
-                }
-              }}
-              onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
-              placeholder="jdoe, DOMAIN\\jdoe, or jdoe@domain.com"
-              autoComplete="off"
-              name="quick-unlock-sam"
-              spellCheck={false}
-              autoCorrect="off"
-              autoCapitalize="none"
-              data-lpignore="true"
-              data-1p-ignore="true"
-              data-form-type="other"
-              className="input-base w-full flex-1 font-mono"
-            />
-            <QuickActionButton onClick={handleUnlock} disabled={unlock.isPending || !normalizedSam} tone="warning">
-              {unlock.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Unlock Account"}
-            </QuickActionButton>
-          </div>
+          <input
+            value={sam}
+            onChange={(e) => {
+              setSam(e.target.value);
+              if (status.tone !== "neutral") {
+                setStatus({ tone: "neutral", message: "" });
+              }
+            }}
+            onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
+            placeholder="jdoe, DOMAIN\\jdoe, or jdoe@domain.com"
+            autoComplete="off"
+            name="quick-unlock-sam"
+            spellCheck={false}
+            autoCorrect="off"
+            autoCapitalize="none"
+            data-lpignore="true"
+            data-1p-ignore="true"
+            data-form-type="other"
+            className="input-base w-full font-mono"
+          />
         </div>
-        <div className="mt-auto">
+        <div className="mt-auto flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <QuickActionStatusLine message={status.message} tone={status.tone} />
+          <QuickActionButton onClick={handleUnlock} disabled={unlock.isPending || !normalizedSam} tone="warning">
+            {unlock.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Unlock Account"}
+          </QuickActionButton>
         </div>
       </div>
     </div>
@@ -737,7 +735,7 @@ function QuickResetPasswordCard() {
               className="input-base w-full font-mono"
             />
           </div>
-          <div>
+          <div className="space-y-2">
             <QuickActionFieldLabel>New Password</QuickActionFieldLabel>
             <input
               type="password"
@@ -760,11 +758,6 @@ function QuickResetPasswordCard() {
               data-form-type="other"
               className="input-base w-full"
             />
-          </div>
-        </div>
-        <div className="mt-auto space-y-2">
-          <QuickActionStatusLine message={status.message} tone={status.tone} />
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <label className="flex items-start gap-2.5 py-0.5 text-[12px] text-muted-foreground">
               <input
                 type="checkbox"
@@ -774,6 +767,11 @@ function QuickResetPasswordCard() {
               />
               <span>Require password change at next login</span>
             </label>
+          </div>
+        </div>
+        <div className="mt-auto space-y-2">
+          <QuickActionStatusLine message={status.message} tone={status.tone} />
+          <div className="flex justify-end">
             <QuickActionButton onClick={handleReset} disabled={reset.isPending || !normalizedSam || !newPw.trim()} tone="primary">
               {reset.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Reset Password"}
             </QuickActionButton>
