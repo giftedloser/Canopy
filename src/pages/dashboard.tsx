@@ -385,6 +385,20 @@ function getOuShort(dn: string): string {
   return parts.map((p) => p.replace(/^OU=/i, "")).join(" / ");
 }
 
+function normalizeUserIdentity(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const withoutDomain = trimmed.includes("\\")
+    ? trimmed.split("\\").pop()?.trim() || ""
+    : trimmed;
+  const withoutUpn = withoutDomain.includes("@")
+    ? withoutDomain.split("@")[0]?.trim() || ""
+    : withoutDomain;
+
+  return withoutUpn;
+}
+
 /* ─── Stat card ──────────────────────────────────────────────── */
 function StatCard({
   icon: Icon,
@@ -502,9 +516,9 @@ function ErrorBanner({ message }: { message: string }) {
 function QuickUnlockCard() {
   const [sam, setSam] = useState("");
   const unlock = useUnlockUser();
+  const normalizedSam = normalizeUserIdentity(sam);
 
   const handleUnlock = async () => {
-    const normalizedSam = sam.trim();
     if (!normalizedSam) return;
     try {
       await unlock.mutateAsync(normalizedSam);
@@ -524,8 +538,13 @@ function QuickUnlockCard() {
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-warning/10 shrink-0">
           <Unlock className="w-4 h-4 text-warning" />
         </div>
-        <div>
-          <p className="text-[13px] font-semibold">Unlock Account</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-[13px] font-semibold">Unlock Account</p>
+            <span className="rounded-full border border-border/70 bg-secondary/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+              Directory-wide
+            </span>
+          </div>
           <p className="text-[11px] text-muted-foreground">Remove lockout from a user account</p>
         </div>
       </div>
@@ -534,7 +553,7 @@ function QuickUnlockCard() {
           value={sam}
           onChange={(e) => setSam(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
-          placeholder="Username (SAM)"
+          placeholder="Username, DOMAIN\\user, or user@domain"
           autoComplete="off"
           name="quick-unlock-sam"
           spellCheck={false}
@@ -547,14 +566,14 @@ function QuickUnlockCard() {
         />
         <button
           onClick={handleUnlock}
-          disabled={unlock.isPending || !sam.trim()}
+          disabled={unlock.isPending || !normalizedSam}
           className="h-8 px-3.5 rounded-md bg-warning text-warning-foreground text-[12px] font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
         >
           {unlock.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Unlock"}
         </button>
       </div>
       <p className="mt-2 text-[11px] text-muted-foreground">
-        Uses the user&apos;s SAM account name. Safe to run even if the account already appears unlocked.
+        Ignores OU scope and targets the connected directory directly. Safe to run even if the account already appears unlocked.
       </p>
     </div>
   );
@@ -566,9 +585,9 @@ function QuickResetPasswordCard() {
   const [newPw, setNewPw] = useState("");
   const [changePasswordAtLogon, setChangePasswordAtLogon] = useState(false);
   const reset = useResetPassword();
+  const normalizedSam = normalizeUserIdentity(sam);
 
   const handleReset = async () => {
-    const normalizedSam = sam.trim();
     const normalizedPassword = newPw.trim();
     if (!normalizedSam || !normalizedPassword) return;
     try {
@@ -593,8 +612,13 @@ function QuickResetPasswordCard() {
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
           <KeyRound className="w-4 h-4 text-primary" />
         </div>
-        <div>
-          <p className="text-[13px] font-semibold">Reset Password</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-[13px] font-semibold">Reset Password</p>
+            <span className="rounded-full border border-border/70 bg-secondary/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+              Directory-wide
+            </span>
+          </div>
           <p className="text-[11px] text-muted-foreground">Set a new password for a user account</p>
         </div>
       </div>
@@ -603,7 +627,7 @@ function QuickResetPasswordCard() {
           value={sam}
           onChange={(e) => setSam(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleReset()}
-          placeholder="Username (SAM)"
+          placeholder="Username, DOMAIN\\user, or user@domain"
           autoComplete="off"
           name="quick-reset-username"
           spellCheck={false}
@@ -632,7 +656,7 @@ function QuickResetPasswordCard() {
         />
         <button
           onClick={handleReset}
-          disabled={reset.isPending || !sam.trim() || !newPw.trim()}
+          disabled={reset.isPending || !normalizedSam || !newPw.trim()}
           className="h-8 px-3.5 rounded-md bg-primary text-primary-foreground text-[12px] font-semibold hover:opacity-90 disabled:opacity-40 transition-opacity"
         >
           {reset.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Reset"}
@@ -648,7 +672,7 @@ function QuickResetPasswordCard() {
         <span>Require password change at next login</span>
       </label>
       <p className="mt-2 text-[11px] text-muted-foreground">
-        Default behavior leaves the password active immediately. Enable the checkbox only if your environment needs a forced change.
+        Ignores OU scope and targets the connected directory directly. Default behavior leaves the password active immediately.
       </p>
     </div>
   );
