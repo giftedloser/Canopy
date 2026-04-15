@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.2] - 2026-04-15
+
+### Changed
+- Refined the dashboard quick-action cards with cleaner vertical layout, clearer field labels, and stronger action hierarchy
+- Clarified that dashboard quick unlock and password reset actions are directory-wide tools and accept SAM, `DOMAIN\user`, or UPN-style identities
+
+### Fixed
+- Command palette search now respects the active OU scope instead of querying outside the selected directory context
+
 ## [1.0.1] - 2026-04-15
 
 ### Changed

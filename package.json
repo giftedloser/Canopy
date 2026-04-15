@@ -2,7 +2,7 @@
   "name": "canopy",
   "description": "Windows-native Active Directory management desktop app built with Tauri, React, and Rust.",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "license": "MIT",
   "author": "Canopy contributors",
   "homepage": "https://github.com/giftedloser/Canopy",
